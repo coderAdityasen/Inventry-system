@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Backend API service (Production)
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: inventory-backend-prod
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=inventory_user
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=inventory_db
+    networks:
+      - inventory-network
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Frontend service (Production)
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: inventory-frontend-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - VITE_API_URL=${API_URL}
+      - VITE_ENVIRONMENT=production
+    networks:
+      - inventory-network
+    depends_on:
+      - backend
+    restart: always
+
+  # MySQL database service (Production)
+  mysql:
+    image: mysql:8.0
+    container_name: inventory-mysql-prod
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=inventory_db
+      - MYSQL_USER=inventory_user
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - inventory-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  inventory-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local

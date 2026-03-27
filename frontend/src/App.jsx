@@ -5,6 +5,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
+import InventoryList from './pages/inventory/InventoryList';
+import InventoryForm from './pages/inventory/InventoryForm';
+import InventoryDetails from './pages/inventory/InventoryDetails';
 
 /**
  * Main App Component
@@ -26,6 +29,40 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Inventory Routes */}
+          <Route 
+            path="/inventory" 
+            element={
+              <ProtectedRoute>
+                <InventoryList />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/inventory/new" 
+            element={
+              <ProtectedRoute>
+                <InventoryForm />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/inventory/:id" 
+            element={
+              <ProtectedRoute>
+                <InventoryDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/inventory/:id/edit" 
+            element={
+              <ProtectedRoute>
+                <InventoryForm />
               </ProtectedRoute>
             } 
           />

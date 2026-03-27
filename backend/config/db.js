@@ -43,24 +43,30 @@ const initDatabase = async () => {
   `);
   
   await poolConnection.query(`
-    CREATE TABLE IF NOT EXISTS items (
+    CREATE TABLE IF NOT EXISTS inventory_items (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
+      sku VARCHAR(100) UNIQUE NOT NULL,
       description TEXT,
       quantity INT DEFAULT 0,
+      price DECIMAL(10, 2) DEFAULT 0,
       category_id INT,
       supplier_id INT,
+      low_stock_threshold INT DEFAULT 10,
+      image_url VARCHAR(500),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
-
+  
   await poolConnection.query(`
     CREATE TABLE IF NOT EXISTS categories (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       description TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      parent_id INT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
     )
   `);
 
@@ -68,10 +74,62 @@ const initDatabase = async () => {
     CREATE TABLE IF NOT EXISTS suppliers (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
-      contact_email VARCHAR(255),
-      contact_phone VARCHAR(50),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      contact_person VARCHAR(255),
+      email VARCHAR(255) UNIQUE,
+      phone VARCHAR(50),
+      address TEXT,
+      notes TEXT,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
+  `);
+  
+  await poolConnection.query(`
+    CREATE TABLE IF NOT EXISTS stock_movements (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      item_id INT NOT NULL,
+      quantity_change INT NOT NULL,
+      movement_type ENUM('purchase', 'sale', 'adjustment', 'return', 'transfer') NOT NULL,
+      notes TEXT,
+      performed_by INT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+      FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+  
+  await poolConnection.query(`
+    CREATE TABLE IF NOT EXISTS alerts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      item_id INT NOT NULL,
+      alert_type ENUM('low_stock', 'out_of_stock', 'overstock') NOT NULL,
+      severity ENUM('info', 'warning', 'critical') DEFAULT 'warning',
+      is_acknowledged BOOLEAN DEFAULT FALSE,
+      acknowledged_by INT,
+      acknowledged_at TIMESTAMP NULL,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+      FOREIGN KEY (acknowledged_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+  
+  await poolConnection.query(`
+    CREATE TABLE IF NOT EXISTS alert_settings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      default_low_stock_threshold INT DEFAULT 10,
+      email_notifications BOOLEAN DEFAULT TRUE,
+      daily_summary BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+  
+  // Insert default alert settings if not exists
+  await poolConnection.query(`
+    INSERT IGNORE INTO alert_settings (id, default_low_stock_threshold, email_notifications, daily_summary)
+    VALUES (1, 10, TRUE, FALSE)
   `);
   
   poolConnection.release();

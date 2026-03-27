@@ -9,7 +9,7 @@ const cookieParser = require('cookie-parser');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8001;
 
 // Middleware
 app.use(helmet());
@@ -34,10 +34,14 @@ app.get('/health', (req, res) => {
 // Auth routes
 app.use('/api/auth', require('../routes/auth.routes'));
 
-// Item routes (placeholder - add authentication as needed)
-// app.use('/api/v1/items', require('./routes/itemRoutes'));
-// app.use('/api/v1/categories', require('./routes/categoryRoutes'));
-// app.use('/api/v1/suppliers', require('./routes/supplierRoutes'));
+// Inventory routes
+app.use('/api/v1/items', require('../routes/inventoryRoutes'));
+
+// Category routes
+app.use('/api/v1/categories', require('../routes/categoryRoutes'));
+
+// Supplier routes
+app.use('/api/v1/suppliers', require('../routes/supplierRoutes'));
 
 // 404 handler
 app.use((req, res) => {
@@ -50,11 +54,27 @@ app.use((req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(err.status || 500).json({
+  
+  // Handle custom errors with error codes
+  const statusCode = err.statusCode || 500;
+  const errorCode = err.errorCode || 'SERVER_500';
+  
+  const response = {
     success: false,
     message: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
+    errorCode,
+    timestamp: new Date().toISOString(),
+    path: req.originalUrl,
+    method: req.method
+  };
+  
+  // Add debug info in development
+  if (process.env.NODE_ENV === 'development') {
+    response.debug = err.debug || {};
+    response.stack = err.stack;
+  }
+  
+  res.status(statusCode).json(response);
 });
 
 // Initialize database and start server

@@ -1,10 +1,10 @@
-# Inventory Management System - Module Breakdown
+# Inventory Management System - Module Breakdown & Implementation Guide
 
 Based on project analysis, here are the modules required for a complete working inventory system. Each module is defined with Context, Objective, Input, Constraints, and Output.
 
 ---
 
-## 1. Authentication Module (COMPLETED)
+## 1. Authentication Module ✅ COMPLETED
 
 **Context:** User authentication and authorization system  
 **Objective:** Secure user login, registration, and session management with JWT tokens and role-based access control  
@@ -18,9 +18,17 @@ Based on project analysis, here are the modules required for a complete working 
 - User profile data
 - Protected route access
 
+**Implementation:**
+- `backend/models/user.model.js` - User schema with roles
+- `backend/services/auth.service.js` - JWT token management
+- `backend/controllers/auth.controller.js` - Login/register handlers
+- `backend/routes/auth.routes.js` - Auth API endpoints
+- `frontend/src/context/AuthContext.jsx` - Auth state management
+- `frontend/src/pages/Login.jsx`, `Register.jsx` - Auth UI
+
 ---
 
-## 2. Items/Inventory Module
+## 2. Items/Inventory Module ✅ COMPLETED
 
 **Context:** Core inventory management - managing all products/items  
 **Objective:** Full CRUD operations for inventory items with stock tracking, search, and filtering  
@@ -32,83 +40,220 @@ Based on project analysis, here are the modules required for a complete working 
 - Role-based access (admin/manager: full CRUD, staff: read-only or limited edit)
 **Output:** Item list with pagination, single item details, stock status, CRUD response
 
-**Backend Files to Create:**
-- `backend/models/InventoryItem.js` - Database model
+**Backend Implementation:**
+- `backend/models/InventoryItem.js` - Database model with CRUD operations
 - `backend/controllers/inventoryController.js` - Request handlers
 - `backend/services/inventoryService.js` - Business logic
 - `backend/routes/inventoryRoutes.js` - API routes
 
-**Frontend Pages to Create:**
-- `frontend/src/pages/inventory/InventoryList.jsx` - Main inventory view
-- `frontend/src/pages/inventory/InventoryForm.jsx` - Add/Edit item form
+**Frontend Implementation:**
+- `frontend/src/pages/inventory/InventoryList.jsx` - Main inventory view with search, filter, pagination
+- `frontend/src/pages/inventory/InventoryForm.jsx` - Add/Edit item form with category/supplier dropdowns
 - `frontend/src/pages/inventory/InventoryDetails.jsx` - Single item view
 
+**API Endpoints:**
+```
+GET    /api/v1/items              - List items (with pagination, search, filters)
+GET    /api/v1/items/:id          - Get single item
+POST   /api/v1/items              - Create item (admin/manager)
+PUT    /api/v1/items/:id         - Update item (admin/manager)
+DELETE /api/v1/items/:id          - Delete item (admin only)
+GET    /api/v1/items/low-stock   - Get low stock items
+```
+
 ---
-## 3. Supplier Management Module
 
-Context:
-Supplier management system within the inventory application that maintains and organizes all supplier-related data, enabling linkage with products, orders, and procurement workflows, while supporting role-based access (Admin, Manager, Staff) for secure and efficient operations.
+## 3. Categories Module ✅ COMPLETED
 
-Objective:
-Manage supplier details with full CRUD functionality, allowing Admin and Manager users to create, update, and delete suppliers, while Staff users can view supplier data; ensure data accuracy, validation, and seamless integration with inventory and purchasing modules.
+**Context:** Product categorization system  
+**Objective:** Manage product categories with CRUD operations, linking to inventory items  
+**Input:** Category name, description, parent category (optional), active status  
+**Constraints:**
+- Unique category name
+- Cannot delete if linked to items
+- Admin/manager only for modifications
+**Output:** Category list, category details, CRUD response
 
-Inputs:
-Supplier Name (required), Contact (required, valid phone format), Email (required, valid format), Address (optional but recommended), and optional fields like status (active/inactive) and timestamps; inputs are collected via frontend forms with validation and sent to backend APIs.
+**Backend Implementation:**
+- `backend/models/Category.js` - Database model
+- `backend/controllers/categoryController.js` - Request handlers
+- `backend/routes/categoryRoutes.js` - API routes
+- Console logging: `[MODEL]` prefix for all database operations
+- Console logging: `[CONTROLLER]` prefix for all requests
 
-Constraints:
-Supplier name may be enforced as unique (based on business rules); email must follow valid format and can be unique; required fields (name, contact, email) must not be empty; deletion should be restricted if the supplier is linked to existing products or orders (or handled via soft delete); role-based access control must restrict Staff users from modifying data; backend must validate all inputs and handle errors properly.
+**Frontend Implementation:**
+- `frontend/src/pages/categories/CategoryList.jsx` - Category table with search, filter, pagination
+- `frontend/src/pages/categories/CategoryForm.jsx` - Add/Edit category form
+- `frontend/src/pages/categories/CategoryDetails.jsx` - Category view with linked items
 
-Output:
-Fully functional Supplier CRUD APIs (create, read, update, delete) with secure authentication and role-based authorization; Supplier database model/schema with validation and indexing; frontend UI including Supplier List (table with search, filter, pagination, and role-based actions) and Supplier Form (add/edit with validation and feedback); consistent API responses with success/error messages and structured supplier data for integration across the system.
+**API Endpoints:**
+```
+GET    /api/v1/categories              - List all categories
+GET    /api/v1/categories/:id          - Get single category
+POST   /api/v1/categories              - Create category (admin/manager)
+PUT    /api/v1/categories/:id         - Update category (admin/manager)
+DELETE /api/v1/categories/:id         - Delete category (admin only)
+```
 
-## 4. Suppliers Module
+**Database Schema:**
+```sql
+CREATE TABLE categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  parent_id INT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
+)
+```
+
+---
+
+## 4. Suppliers Module ✅ COMPLETED
 
 **Context:** Supplier/vendor management  
 **Objective:** Manage supplier information, contact details, and supplier-item relationships  
-**Input:** Supplier name, contact person, email, phone, address, notes  
+**Input:** Supplier name, contact person, email, phone, address, notes, active status  
 **Constraints:**
 - Unique email per supplier
 - Cannot delete if linked to active items
 - Admin/manager only for full CRUD
 **Output:** Supplier list, supplier details, CRUD response
 
-**Backend Files:**
-- `backend/models/Supplier.js`
-- `backend/controllers/supplierController.js`
-- `backend/services/supplierService.js`
-- `backend/routes/supplierRoutes.js`
+**Backend Implementation:**
+- `backend/models/Supplier.js` - Database model with full CRUD
+- `backend/controllers/supplierController.js` - Request handlers
+- `backend/services/supplierService.js` - Business logic with validation
+- `backend/routes/supplierRoutes.js` - API routes
+- Console logging: `[MODEL]`, `[SERVICE]`, `[CONTROLLER]` prefixes
+- Error codes: `SUPPLIER_001` (validation), `SUPPLIER_002` (duplicate), `SUPPLIER_004` (not found), `SUPPLIER_007` (permissions)
 
-**Frontend Files:**
-- `frontend/src/pages/suppliers/SupplierList.jsx`
-- `frontend/src/pages/suppliers/SupplierForm.jsx`
-- `frontend/src/pages/suppliers/SupplierDetails.jsx`
+**Frontend Implementation:**
+- `frontend/src/pages/suppliers/SupplierList.jsx` - Supplier table with search, filter, pagination
+- `frontend/src/pages/suppliers/SupplierForm.jsx` - Add/Edit supplier form
+- `frontend/src/pages/suppliers/SupplierDetails.jsx` - Supplier view with linked items
+- `frontend/src/services/supplierAPI.js` - API service with `[API]` prefix logging
+
+**API Endpoints:**
+```
+GET    /api/v1/suppliers              - List suppliers (with pagination, search, filters)
+GET    /api/v1/suppliers/:id          - Get single supplier
+GET    /api/v1/suppliers/:id/details  - Get supplier with item count
+POST   /api/v1/suppliers              - Create supplier (admin/manager)
+PUT    /api/v1/suppliers/:id          - Update supplier (admin/manager)
+PATCH  /api/v1/suppliers/:id/status  - Toggle active status (admin/manager)
+DELETE /api/v1/suppliers/:id         - Delete supplier (admin only)
+```
+
+**Database Schema:**
+```sql
+CREATE TABLE suppliers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  contact_person VARCHAR(255),
+  email VARCHAR(255) UNIQUE,
+  phone VARCHAR(50),
+  address TEXT,
+  notes TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
+```
 
 ---
 
-## 5. Stock Management Module
+## 5. Dashboard Module ✅ COMPLETED (Updated)
 
-**Context:** Stock movement tracking and adjustments  
-**Objective:** Track stock in/out, adjustments, and maintain stock history  
-**Input:** Item ID, quantity change, type (purchase, sale, adjustment, return), notes, date  
+**Context:** Main landing page after login  
+**Objective:** Display key metrics, quick actions, and navigation to all modules  
+**Input:** User context, role-based data  
 **Constraints:**
-- Cannot reduce below zero
-- Requires authorization for large adjustments
-- All movements logged
-**Output:** Stock history, current quantity, movement reports
+- Role-specific widgets
+- Quick navigation links
+- Responsive design
+**Output:** Dashboard widgets, quick stats, module navigation
 
-**Backend Files:**
-- `backend/models/StockMovement.js`
-- `backend/controllers/stockController.js`
-- `backend/services/stockService.js`
-- `backend/routes/stockRoutes.js`
-
-**Frontend Files:**
-- `frontend/src/pages/stock/StockMovements.jsx`
-- `frontend/src/pages/stock/StockAdjustment.jsx`
+**Implementation:**
+- `frontend/src/pages/Dashboard.jsx` - Updated with:
+  - User info card (name, email, role)
+  - Quick action cards (Inventory, Suppliers, Categories)
+  - Role-based access (Admin panel, Reports for manager)
+  - Logout functionality
+  - Navigation links to all modules
 
 ---
 
-## 6. Stock Alerts Module
+## 6. Order Management Module ✅ COMPLETED
+
+**Context:**
+Order management system when user click on order management that handles both purchase (incoming stock from suppliers) and sales (outgoing stock to customers), ensuring seamless integration with inventory, suppliers, and product modules while maintaining role-based access control (Admin, Manager, Staff).
+
+**Objective:**
+Handle the complete purchase and sales flow by enabling users to create and manage orders, track order status, automatically update inventory stock levels, and maintain a history of all transactions for auditing and reporting purposes.
+
+**Inputs:**
+Order Type (purchase/sale), list of products (each with product ID, quantity, price), supplier ID (required for purchase orders), order status (pending/completed/cancelled), and optional fields like notes or timestamps.
+
+**Constraints:**
+Must support adding multiple products in a single order; supplier is mandatory for purchase orders but not required for sales; stock must automatically increase for purchase orders and decrease for sales orders.
+
+**Backend Implementation:**
+- `backend/models/Order.js` - Database model with full CRUD and order item management
+- `backend/controllers/orderController.js` - Request handlers
+- `backend/services/orderService.js` - Business logic with inventory integration
+- `backend/routes/orderRoutes.js` - API routes
+- `backend/models/InventoryItem.js` - Added `updateQuantity` method for stock management
+- Console logging: `[MODEL]`, `[SERVICE]`, `[CONTROLLER]` prefixes
+- Error codes: `ORDER_001` (validation), `ORDER_004` (not found), `ORDER_007` (permissions), `ORDER_008` (invalid operation)
+
+**Frontend Implementation:**
+- `frontend/src/pages/orders/OrderList.jsx` - Order table with search, filter, pagination, status update
+- `frontend/src/pages/orders/OrderForm.jsx` - Create order with dynamic item addition
+- `frontend/src/pages/orders/OrderDetails.jsx` - Order view with items and status management
+- `frontend/src/services/orderAPI.js` - API service with `[API]` prefix logging
+
+**API Endpoints:**
+```
+GET    /api/v1/orders              - List orders (with pagination, search, filters)
+GET    /api/v1/orders/:id          - Get single order with items
+POST   /api/v1/orders              - Create order (admin/manager)
+PUT    /api/v1/orders/:id          - Update order (admin/manager)
+PATCH  /api/v1/orders/:id/status  - Update order status (admin/manager)
+DELETE /api/v1/orders/:id         - Delete order (admin only)
+```
+
+**Database Schema:**
+```sql
+CREATE TABLE orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_number VARCHAR(50) UNIQUE NOT NULL,
+  order_type ENUM('purchase', 'sale') NOT NULL,
+  supplier_id INT,
+  status ENUM('pending', 'processing', 'completed', 'cancelled') DEFAULT 'pending',
+  notes TEXT,
+  total_amount DECIMAL(10, 2) DEFAULT 0,
+  created_by INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
+
+CREATE TABLE order_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id INT NOT NULL,
+  item_id INT NOT NULL,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(10, 2) DEFAULT 0,
+  total_price DECIMAL(10, 2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+---
+
+## 7. Stock Alerts Module 🔄 NOT STARTED
 
 **Context:** Low stock notifications  
 **Objective:** Automatic alerts when items fall below threshold quantities  
@@ -119,19 +264,19 @@ Fully functional Supplier CRUD APIs (create, read, update, delete) with secure a
 - Daily/weekly summary option
 **Output:** Alert list, alert configuration, notification settings
 
-**Backend Files:**
+**Backend Files to Create:**
 - `backend/models/Alert.js`
 - `backend/controllers/alertController.js`
 - `backend/services/alertService.js`
 - `backend/services/notificationService.js`
 
-**Frontend Files:**
+**Frontend Files to Create:**
 - `frontend/src/pages/alerts/AlertsList.jsx`
 - `frontend/src/pages/alerts/AlertSettings.jsx`
 
 ---
 
-## 7. Reports/Analytics Module
+## 8. Reports/Analytics Module 🔄 NOT STARTED
 
 **Context:** Business intelligence and reporting  
 **Objective:** Generate inventory reports, analytics, and visualizations  
@@ -142,19 +287,19 @@ Fully functional Supplier CRUD APIs (create, read, update, delete) with secure a
 - Real-time data calculation
 **Output:** Report data, charts, export files
 
-**Backend Files:**
+**Backend Files to Create:**
 - `backend/controllers/reportController.js`
 - `backend/services/reportService.js`
 - `backend/routes/reportRoutes.js`
 
-**Frontend Files:**
+**Frontend Files to Create:**
 - `frontend/src/pages/reports/Dashboard.jsx`
 - `frontend/src/pages/reports/InventoryReport.jsx`
 - `frontend/src/pages/reports/StockMovementReport.jsx`
 
 ---
 
-## 8. User Management Module
+## 9. User Management Module 🔄 NOT STARTED
 
 **Context:** Admin-level user administration  
 **Objective:** Manage system users, roles, and permissions  
@@ -165,40 +310,19 @@ Fully functional Supplier CRUD APIs (create, read, update, delete) with secure a
 - Password requirements enforced
 **Output:** User list, user details, CRUD response
 
-**Backend Files:**
+**Backend Files to Create:**
 - `backend/controllers/userController.js`
 - `backend/services/userService.js`
 - `backend/routes/userRoutes.js`
 
-**Frontend Files:**
+**Frontend Files to Create:**
 - `frontend/src/pages/admin/UsersList.jsx`
 - `frontend/src/pages/admin/UserForm.jsx`
 - `frontend/src/pages/admin/UserDetails.jsx`
 
 ---
 
-## 9. Dashboard Module
-
-**Context:** Main landing page after login  
-**Objective:** Display key metrics, quick actions, and system overview  
-**Input:** User context, role-based data  
-**Constraints:**
-- Role-specific widgets
-- Real-time data
-- Responsive design
-**Output:** Dashboard widgets, quick stats, recent activity
-
-**Frontend Files (Update):**
-- `frontend/src/pages/Dashboard.jsx` - Needs complete rewrite with:
-  - Total inventory value
-  - Low stock items count
-  - Recent stock movements
-  - Quick action buttons
-  - Charts (items by category, stock levels)
-
----
-
-## 10. Search & Filter Module
+## 10. Search & Filter Module 🔄 NOT STARTED
 
 **Context:** Global search and advanced filtering  
 **Objective:** Quick search across items, categories, suppliers with advanced filters  
@@ -209,35 +333,117 @@ Fully functional Supplier CRUD APIs (create, read, update, delete) with secure a
 - Full-text search capability
 **Output:** Filtered results, filter options, search suggestions
 
-**Backend Files:**
+**Backend Files to Create:**
 - `backend/services/searchService.js`
 
-**Frontend Components:**
+**Frontend Components to Create:**
 - `frontend/src/components/search/SearchBar.jsx`
 - `frontend/src/components/filters/FilterPanel.jsx`
 
 ---
 
-## Implementation Order Recommendation
+## Implementation Status Summary
 
-1. **Phase 1 - Core Items:** Items CRUD, Categories CRUD (Foundation)
-2. **Phase 2 - Inventory Operations:** Suppliers, Stock Movements (Essential features)
-3. **Phase 3 - Alerts & Notifications:** Stock alerts, notifications (Monitoring)
-4. **Phase 4 - Business Intelligence:** Reports, Dashboard analytics (Insights)
-5. **Phase 5 - Administration:** User management, settings (Control)
+| Module | Status | Backend Files | Frontend Files | Priority |
+|--------|--------|---------------|----------------|----------|
+| Authentication | ✅ Complete | 4 | 3 | P1 |
+| Items/Inventory | ✅ Complete | 4 | 3 | P1 |
+| Categories | ✅ Complete | 3 | 3 | P1 |
+| Suppliers | ✅ Complete | 4 | 4 | P2 |
+| Dashboard | ✅ Updated | 0 | 1 | P2 |
+| Order Management | 🔄 Not Started | 4 | 3 | P2 |
+| Stock Alerts | 🔄 Not Started | 4 | 2 | P3 |
+| Reports/Analytics | 🔄 Not Started | 3 | 3 | P4 |
+| User Management | 🔄 Not Started | 3 | 3 | P5 |
+| Search & Filter | 🔄 Not Started | 1 | 2 | P3 |
 
 ---
 
-## Summary Table
+## Console Logging Conventions
 
-| Module | Backend Files | Frontend Pages | Priority |
-|--------|--------------|----------------|----------|
-| Items/Inventory | 4 | 3 | P1 |
-| Categories | 4 | 2 | P1 |
-| Suppliers | 4 | 3 | P2 |
-| Stock Management | 4 | 2 | P2 |
-| Stock Alerts | 4 | 2 | P3 |
-| Reports/Analytics | 3 | 3 | P4 |
-| User Management | 3 | 3 | P5 |
-| Dashboard | 0 | 1 (rewrite) | P2 |
-| Search & Filter | 1 | 2 | P3 |
+All modules implement consistent console logging for debugging:
+
+**Backend:**
+- `[MODEL]` - Database operations (queries, inserts, updates)
+- `[SERVICE]` - Business logic and validation
+- `[CONTROLLER]` - Request handling and responses
+
+**Frontend:**
+- `[API]` - API service calls (requests and responses)
+- `[ComponentName]` - React component lifecycle events
+
+**Error Handling:**
+- Backend uses error codes (e.g., `SUPPLIER_001`, `CATEGORY_004`)
+- Frontend displays user-friendly error messages
+- Full error details logged to console for debugging
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         FRONTEND                                │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+│  │   Pages     │  │ Components  │  │   Context   │             │
+│  │ - Dashboard │  │ - Button    │  │ - AuthContext│             │
+│  │ - Inventory │  │ - Protected │  │              │             │
+│  │ - Suppliers │  │   Route     │  │              │             │
+│  │ - Categories│  │             │  │              │             │
+│  └──────┬──────┘  └──────┬──────┘  └─────────────┘             │
+│         │                │                                      │
+│         └────────┬───────┘                                      │
+│                  ▼                                              │
+│         ┌────────────────┐                                     │
+│         │   API Services │                                     │
+│         │ - inventoryAPI │                                     │
+│         │ - supplierAPI │                                     │
+│         └────────┬───────┘                                     │
+└──────────────────┼──────────────────────────────────────────────┘
+                   │ HTTP Requests
+┌──────────────────┼──────────────────────────────────────────────┐
+│                  ▼           BACKEND                            │
+│         ┌────────────────┐                                     │
+│         │   Routes       │                                     │
+│         │ - /api/v1/items│                                     │
+│         │ - /api/v1/cat..│                                     │
+│         │ - /api/v1/sup..│                                     │
+│         └────────┬───────┘                                     │
+│                  ▼                                              │
+│         ┌────────────────┐                                     │
+│         │  Controllers   │                                     │
+│         │ - itemControl..│                                     │
+│         │ - categoryCtrl..│                                    │
+│         │ - supplierCtrl.│                                     │
+│         └────────┬───────┘                                     │
+│                  ▼                                              │
+│         ┌────────────────┐                                     │
+│         │   Services     │                                     │
+│         │ - inventoryServ│                                     │
+│         │ - categoryServ │                                     │
+│         │ - supplierServ │                                     │
+│         └────────┬───────┘                                     │
+│                  ▼                                              │
+│         ┌────────────────┐                                     │
+│         │    Models     │                                     │
+│         │ - InventoryItem│                                     │
+│         │ - Category    │                                     │
+│         │ - Supplier    │                                     │
+│         └────────┬───────┘                                     │
+│                  ▼                                              │
+│         ┌────────────────┐                                     │
+│         │  Database (MySQL)                                    │
+│         │ - users, inventory_items,                            │
+│         │   categories, suppliers                              │
+│         └──────────────────────────────────────────────────────┘
+```
+
+---
+
+## Next Steps
+
+1. **Test Supplier API** - Verify all CRUD operations work after database schema fix
+2. **Test Category API** - Ensure all category endpoints function correctly
+3. **Implement Order Management** - Start with purchase orders
+4. **Add Stock Alerts** - Automatic low stock notifications
+5. **Build Reports** - Analytics and export functionality

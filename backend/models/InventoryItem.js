@@ -266,6 +266,41 @@ const InventoryItemModel = {
       console.error('Error in countBySupplier:', error);
       throw error;
     }
+  },
+
+  /**
+   * Update item quantity (for order processing)
+   */
+  updateQuantity: async (id, quantityChange) => {
+    try {
+      console.log('[MODEL] updateQuantity - Item ID:', id, 'Change:', quantityChange);
+      
+      // First get current quantity
+      const [current] = await pool.execute(
+        'SELECT quantity FROM inventory_items WHERE id = ?',
+        [id]
+      );
+      
+      if (current.length === 0) {
+        throw new Error('Item not found');
+      }
+      
+      const newQuantity = current[0].quantity + quantityChange;
+      
+      // Ensure quantity doesn't go below 0
+      const finalQuantity = Math.max(0, newQuantity);
+      
+      await pool.execute(
+        'UPDATE inventory_items SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [finalQuantity, id]
+      );
+      
+      console.log('[MODEL] updateQuantity - New quantity:', finalQuantity);
+      return true;
+    } catch (error) {
+      console.error('[MODEL] updateQuantity - Error:', error);
+      throw error;
+    }
   }
 };
 

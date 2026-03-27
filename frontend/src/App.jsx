@@ -14,6 +14,9 @@ import SupplierDetails from './pages/suppliers/SupplierDetails';
 import CategoryList from './pages/categories/CategoryList';
 import CategoryForm from './pages/categories/CategoryForm';
 import CategoryDetails from './pages/categories/CategoryDetails';
+import OrderList from './pages/orders/OrderList';
+import OrderForm from './pages/orders/OrderForm';
+import OrderDetails from './pages/orders/OrderDetails';
 
 /**
  * Main App Component
@@ -137,6 +140,32 @@ function App() {
             element={
               <ProtectedRoute>
                 <CategoryForm />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Order Routes */}
+          <Route 
+            path="/orders" 
+            element={
+              <ProtectedRoute>
+                <OrderList />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/orders/new" 
+            element={
+              <ProtectedRoute>
+                <OrderForm />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/orders/:id" 
+            element={
+              <ProtectedRoute>
+                <OrderDetails />
               </ProtectedRoute>
             } 
           />

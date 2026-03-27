@@ -189,6 +189,39 @@ const initDatabase = async () => {
       FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
+
+  // Orders table
+  await poolConnection.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_number VARCHAR(50) UNIQUE NOT NULL,
+      order_type ENUM('purchase', 'sale') NOT NULL,
+      supplier_id INT,
+      status ENUM('pending', 'processing', 'completed', 'cancelled') DEFAULT 'pending',
+      notes TEXT,
+      total_amount DECIMAL(10, 2) DEFAULT 0,
+      created_by INT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+
+  // Order items table
+  await poolConnection.query(`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      item_id INT NOT NULL,
+      quantity INT NOT NULL,
+      unit_price DECIMAL(10, 2) DEFAULT 0,
+      total_price DECIMAL(10, 2) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+      FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE
+    )
+  `);
   
   await poolConnection.query(`
     CREATE TABLE IF NOT EXISTS alerts (

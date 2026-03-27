@@ -43,6 +43,9 @@ app.use('/api/v1/categories', require('../routes/categoryRoutes'));
 // Supplier routes
 app.use('/api/v1/suppliers', require('../routes/supplierRoutes'));
 
+// Order routes
+app.use('/api/v1/orders', require('../routes/orderRoutes'));
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({

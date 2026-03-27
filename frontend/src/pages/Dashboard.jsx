@@ -103,16 +103,16 @@ function Dashboard() {
             </div>
           )}
 
-          {/* Stock Alerts */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          {/* Orders */}
+          <Link to="/orders" className="bg-white overflow-hidden shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900">Stock Alerts</h3>
-              <p className="mt-2 text-sm text-gray-500">Low stock items notifications</p>
-              <button className="mt-4 w-full inline-flex justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                View Alerts
+              <h3 className="text-lg font-medium text-gray-900">Orders</h3>
+              <p className="mt-2 text-sm text-gray-500">Get orders and manage them</p>
+              <button className="mt-4 w-full inline-flex justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                View Orders
               </button>
             </div>
-          </div>
+          </Link>
 
           {/* Suppliers */}
           <Link to="/suppliers" className="bg-white overflow-hidden shadow rounded-lg">

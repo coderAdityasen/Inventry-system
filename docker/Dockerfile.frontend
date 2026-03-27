@@ -1,4 +1,25 @@
-# Use Node.js for building
+# Development stage - run Vite dev server with hot reload
+FROM node:20-alpine AS development
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy frontend source
+COPY frontend/ .
+
+# Expose port
+EXPOSE 5173
+
+# Start Vite in development mode with hot reload
+CMD ["npm", "run", "dev", "--", "--host"]
+
+# Production stage
 FROM node:20-alpine AS builder
 
 # Set working directory

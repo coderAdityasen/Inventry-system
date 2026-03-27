@@ -7,7 +7,7 @@ import useAuth from '../hooks/useAuth';
  */
 function Register() {
   const navigate = useNavigate();
-  const { register, error, clearError, isAuthenticated } = useAuth();
+  const { register, login, error, clearError, isAuthenticated } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -93,7 +93,14 @@ function Register() {
     setIsSubmitting(false);
     
     if (result.success) {
-      navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      // Auto-login after registration and redirect to dashboard
+      const loginResult = await login(formData.email, formData.password);
+      if (loginResult.success) {
+        navigate('/dashboard');
+      } else {
+        // If auto-login fails, redirect to login with message
+        navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      }
     }
   };
 

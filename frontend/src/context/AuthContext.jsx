@@ -5,6 +5,7 @@ const AuthContext = createContext(null);
 
 /**
  * Auth Provider - Manages global authentication state
+ * Fixed: Prevent infinite refresh token loop
  */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -14,25 +15,84 @@ export function AuthProvider({ children }) {
 
   // Set up axios interceptor for token refresh
   useEffect(() => {
+    let isRefreshing = false;
+    let failedQueue = [];
+    
+    const processQueue = (error, token = null) => {
+      failedQueue.forEach(prom => {
+        if (error) {
+          prom.reject(error);
+        } else {
+          prom.resolve(token);
+        }
+      });
+      failedQueue = [];
+    };
+    
     const interceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
         
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Skip if already retried
+        if (originalRequest._retry) {
+          console.log('[AuthContext] Request already retried, rejecting');
+          return Promise.reject(error);
+        }
+        
+        // Skip if this is the refresh-token request itself (prevent infinite loop)
+        if (originalRequest.url?.includes('/api/auth/refresh-token')) {
+          console.log('[AuthContext] This IS a refresh-token request, rejecting to prevent loop');
+          return Promise.reject(error);
+        }
+        
+        // Only handle 401 errors for protected endpoints (not auth endpoints)
+        if (error.response?.status === 401 && !originalRequest.url?.includes('/api/auth/')) {
+          console.log('[AuthContext] Got 401, checking if should refresh...');
+          
+          if (isRefreshing) {
+            console.log('[AuthContext] Already refreshing, queuing request');
+            return new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            })
+              .then(token => {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+                return api(originalRequest);
+              })
+              .catch(err => Promise.reject(err));
+          }
+          
           originalRequest._retry = true;
+          isRefreshing = true;
           
           try {
+            console.log('[AuthContext] Attempting token refresh...');
+            
             const response = await api.post('/api/auth/refresh-token');
             const { accessToken: newToken } = response.data.data;
+            
+            console.log('[AuthContext] Token refreshed successfully');
             
             setAccessToken(newToken);
             localStorage.setItem('accessToken', newToken);
             
+            processQueue(null, newToken);
+            
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return api(originalRequest);
+            
+            // Retry the original request
+            const retryResponse = await api(originalRequest);
+            isRefreshing = false;
+            return retryResponse;
           } catch (refreshError) {
-            logout();
+            console.error('[AuthContext] Token refresh failed:', refreshError);
+            processQueue(refreshError, null);
+            isRefreshing = false;
+            // Only logout if it's a real auth error, not a network error
+            if (refreshError.response?.status === 401) {
+              console.log('[AuthContext] Refresh failed with 401, logging out');
+              logout();
+            }
             return Promise.reject(refreshError);
           }
         }

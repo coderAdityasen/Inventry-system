@@ -12,6 +12,7 @@ const api = axios.create({
 });
 
 // Request interceptor - add auth token to requests
+// This runs on every request and gets the latest token from localStorage
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');

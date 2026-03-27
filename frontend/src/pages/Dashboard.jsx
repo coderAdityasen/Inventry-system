@@ -91,8 +91,8 @@ function Dashboard() {
           </Link>
 
           {/* Reports (for admin and manager) */}
-          {isManager() && (
-            <div className="bg-white overflow-hidden shadow rounded-lg">
+          {(isAdmin() || isManager()) && (
+            <Link to="/reports" className="bg-white overflow-hidden shadow rounded-lg">
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-lg font-medium text-gray-900">Reports</h3>
                 <p className="mt-2 text-sm text-gray-500">View analytics and reports</p>
@@ -100,7 +100,7 @@ function Dashboard() {
                   View Reports
                 </button>
               </div>
-            </div>
+            </Link>
           )}
 
           {/* Orders */}

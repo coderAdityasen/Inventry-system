@@ -252,54 +252,25 @@ CREATE TABLE order_items (
 ```
 
 ---
+## 7. Reports & Analytics Module
 
-## 7. Stock Alerts Module 🔄 NOT STARTED
+Context:
+Reporting and analytics system within the inventory application that aggregates data from inventory, orders, and suppliers to provide meaningful business insights, enabling Admin and Manager roles to monitor performance, track stock levels, and make data-driven decisions, while Staff users may have limited or view-only access.
 
-**Context:** Low stock notifications  
-**Objective:** Automatic alerts when items fall below threshold quantities  
-**Input:** Item ID, threshold value, alert type (low stock, out of stock)  
-**Constraints:**
-- Configurable threshold per item
-- Email/notification to relevant users
-- Daily/weekly summary option
-**Output:** Alert list, alert configuration, notification settings
+Objective:
+Provide system insights by generating real-time and historical reports on inventory and sales, highlighting key metrics such as current stock levels, sales performance, and low stock alerts, along with filtering capabilities to analyze data over specific date ranges.
 
-**Backend Files to Create:**
-- `backend/models/Alert.js`
-- `backend/controllers/alertController.js`
-- `backend/services/alertService.js`
-- `backend/services/notificationService.js`
+Inputs:
+Date range filters (start date, end date), report type (inventory, sales, low stock), optional filters like category, product, or supplier; inputs are provided via frontend UI controls (date pickers, dropdowns, search fields) and sent to backend APIs for processing.
 
-**Frontend Files to Create:**
-- `frontend/src/pages/alerts/AlertsList.jsx`
-- `frontend/src/pages/alerts/AlertSettings.jsx`
+Constraints:
+Inventory report must reflect real-time stock data; sales report should be based on completed orders only; low stock alerts must trigger based on predefined reorder levels; ensure efficient querying for large datasets (use indexing, aggregation pipelines); role-based access control (Admin/Manager full access, Staff limited); ensure accurate calculations for totals (stock value, sales revenue); backend must validate date ranges and filter parameters.
 
----
+Output:
+Report APIs (e.g., /reports/inventory, /reports/sales, /reports/low-stock) built using Node.js and Express with secure authentication and optimized queries/aggregations; data responses including structured summaries (total stock, total sales, low stock items) and detailed lists; basic dashboard UI built with React and Tailwind displaying key metrics (cards for totals), tables for reports, and simple charts/graphs (e.g., sales over time, stock distribution), along with filtering options and real-time updates, ensuring clear visualization and actionable insights for users.
 
-## 8. Reports/Analytics Module 🔄 NOT STARTED
 
-**Context:** Business intelligence and reporting  
-**Objective:** Generate inventory reports, analytics, and visualizations  
-**Input:** Date range, report type, filters (category, supplier, etc.)  
-**Constraints:**
-- Manager/admin access only
-- Export options (PDF, Excel)
-- Real-time data calculation
-**Output:** Report data, charts, export files
-
-**Backend Files to Create:**
-- `backend/controllers/reportController.js`
-- `backend/services/reportService.js`
-- `backend/routes/reportRoutes.js`
-
-**Frontend Files to Create:**
-- `frontend/src/pages/reports/Dashboard.jsx`
-- `frontend/src/pages/reports/InventoryReport.jsx`
-- `frontend/src/pages/reports/StockMovementReport.jsx`
-
----
-
-## 9. User Management Module 🔄 NOT STARTED
+## 8. User Management Module 🔄 NOT STARTED
 
 **Context:** Admin-level user administration  
 **Objective:** Manage system users, roles, and permissions  

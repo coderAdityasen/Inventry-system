@@ -17,6 +17,7 @@ import CategoryDetails from './pages/categories/CategoryDetails';
 import OrderList from './pages/orders/OrderList';
 import OrderForm from './pages/orders/OrderForm';
 import OrderDetails from './pages/orders/OrderDetails';
+import Reports from './pages/reports/Reports';
 
 /**
  * Main App Component
@@ -166,6 +167,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <OrderDetails />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Reports Route */}
+          <Route 
+            path="/reports" 
+            element={
+              <ProtectedRoute>
+                <Reports />
               </ProtectedRoute>
             } 
           />

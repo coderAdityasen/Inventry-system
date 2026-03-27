@@ -65,10 +65,31 @@ const initDatabase = async () => {
       name VARCHAR(255) NOT NULL,
       description TEXT,
       parent_id INT,
+      is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
     )
   `);
+
+  // Add is_active column to categories if it doesn't exist
+  try {
+    await poolConnection.query(`
+      ALTER TABLE categories
+      ADD COLUMN is_active BOOLEAN DEFAULT TRUE
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
+
+  try {
+    await poolConnection.query(`
+      ALTER TABLE categories
+      ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
 
   await poolConnection.query(`
     CREATE TABLE IF NOT EXISTS suppliers (
@@ -84,6 +105,76 @@ const initDatabase = async () => {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
+
+  // Add email column if it doesn't exist (for existing tables)
+  try {
+    await poolConnection.query(`
+      ALTER TABLE suppliers
+      ADD COLUMN email VARCHAR(255) UNIQUE
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
+
+  // Add contact_person column if it doesn't exist (for existing tables)
+  try {
+    await poolConnection.query(`
+      ALTER TABLE suppliers
+      ADD COLUMN contact_person VARCHAR(255)
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
+
+  // Add phone column if it doesn't exist
+  try {
+    await poolConnection.query(`
+      ALTER TABLE suppliers
+      ADD COLUMN phone VARCHAR(50)
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
+
+  // Add address column if it doesn't exist
+  try {
+    await poolConnection.query(`
+      ALTER TABLE suppliers
+      ADD COLUMN address TEXT
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
+
+  // Add notes column if it doesn't exist
+  try {
+    await poolConnection.query(`
+      ALTER TABLE suppliers
+      ADD COLUMN notes TEXT
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
+
+  // Add is_active column if it doesn't exist
+  try {
+    await poolConnection.query(`
+      ALTER TABLE suppliers
+      ADD COLUMN is_active BOOLEAN DEFAULT TRUE
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
+
+  // Add updated_at column if it doesn't exist
+  try {
+    await poolConnection.query(`
+      ALTER TABLE suppliers
+      ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    `);
+  } catch (err) {
+    // Column may already exist, ignore error
+  }
   
   await poolConnection.query(`
     CREATE TABLE IF NOT EXISTS stock_movements (

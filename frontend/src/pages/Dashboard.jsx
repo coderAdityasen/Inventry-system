@@ -115,7 +115,7 @@ function Dashboard() {
           </div>
 
           {/* Suppliers */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <Link to="/suppliers" className="bg-white overflow-hidden shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900">Suppliers</h3>
               <p className="mt-2 text-sm text-gray-500">Manage supplier information</p>
@@ -123,10 +123,10 @@ function Dashboard() {
                 Manage Suppliers
               </button>
             </div>
-          </div>
+          </Link>
 
           {/* Categories */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <Link to="/categories" className="bg-white overflow-hidden shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900">Categories</h3>
               <p className="mt-2 text-sm text-gray-500">Organize your products</p>
@@ -134,7 +134,7 @@ function Dashboard() {
                 Manage Categories
               </button>
             </div>
-          </div>
+          </Link>
         </div>
       </main>
     </div>

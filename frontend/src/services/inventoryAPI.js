@@ -209,6 +209,82 @@ const inventoryAPI = {
       });
       throw err;
     }
+  },
+
+  // =====================
+  // Category CRUD operations
+  // =====================
+  getCategoryById: async (id) => {
+    console.log('[API] getCategoryById - Request category ID:', id);
+    try {
+      const response = await api.get(`/api/v1/categories/${id}`);
+      console.log('[API] getCategoryById - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getCategoryById - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url,
+        categoryId: id
+      });
+      throw err;
+    }
+  },
+
+  createCategory: async (categoryData) => {
+    console.log('[API] createCategory - Request data:', categoryData);
+    try {
+      const response = await api.post('/api/v1/categories', categoryData);
+      console.log('[API] createCategory - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] createCategory - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url,
+        requestData: categoryData
+      });
+      throw err;
+    }
+  },
+
+  updateCategory: async (id, categoryData) => {
+    console.log('[API] updateCategory - Request for category ID:', id, 'Data:', categoryData);
+    try {
+      const response = await api.put(`/api/v1/categories/${id}`, categoryData);
+      console.log('[API] updateCategory - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] updateCategory - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url,
+        categoryId: id,
+        requestData: categoryData
+      });
+      throw err;
+    }
+  },
+
+  deleteCategory: async (id) => {
+    console.log('[API] deleteCategory - Request for category ID:', id);
+    try {
+      const response = await api.delete(`/api/v1/categories/${id}`);
+      console.log('[API] deleteCategory - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] deleteCategory - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url,
+        categoryId: id
+      });
+      throw err;
+    }
   }
 };
 

@@ -8,6 +8,12 @@ import Home from './pages/Home';
 import InventoryList from './pages/inventory/InventoryList';
 import InventoryForm from './pages/inventory/InventoryForm';
 import InventoryDetails from './pages/inventory/InventoryDetails';
+import SupplierList from './pages/suppliers/SupplierList';
+import SupplierForm from './pages/suppliers/SupplierForm';
+import SupplierDetails from './pages/suppliers/SupplierDetails';
+import CategoryList from './pages/categories/CategoryList';
+import CategoryForm from './pages/categories/CategoryForm';
+import CategoryDetails from './pages/categories/CategoryDetails';
 
 /**
  * Main App Component
@@ -63,6 +69,74 @@ function App() {
             element={
               <ProtectedRoute>
                 <InventoryForm />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Supplier Routes */}
+          <Route 
+            path="/suppliers" 
+            element={
+              <ProtectedRoute>
+                <SupplierList />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/suppliers/new" 
+            element={
+              <ProtectedRoute>
+                <SupplierForm />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/suppliers/:id" 
+            element={
+              <ProtectedRoute>
+                <SupplierDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/suppliers/:id/edit" 
+            element={
+              <ProtectedRoute>
+                <SupplierForm />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Category Routes */}
+          <Route 
+            path="/categories" 
+            element={
+              <ProtectedRoute>
+                <CategoryList />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/categories/new" 
+            element={
+              <ProtectedRoute>
+                <CategoryForm />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/categories/:id" 
+            element={
+              <ProtectedRoute>
+                <CategoryDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/categories/:id/edit" 
+            element={
+              <ProtectedRoute>
+                <CategoryForm />
               </ProtectedRoute>
             } 
           />

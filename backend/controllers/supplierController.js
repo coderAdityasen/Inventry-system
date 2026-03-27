@@ -1,42 +1,70 @@
 /**
  * Supplier Controller - Request handlers for suppliers
  * With detailed console logging for debugging
+ * Proper status codes for error identification
  */
 
-const SupplierModel = require('../models/Supplier');
+const supplierService = require('../services/supplierService');
 
 /**
- * Helper function to handle errors
+ * Helper function to handle service errors
  */
-const handleError = (error, res, operation) => {
+const handleServiceError = (error, res, operation) => {
   console.error(`[CONTROLLER] Error in ${operation}:`, {
     message: error.message,
-    stack: error.stack
+    errorCode: error.errorCode,
+    statusCode: error.statusCode,
+    stack: error.stack,
+    debug: error.debug
   });
   
   const statusCode = error.statusCode || 500;
+  const errorCode = error.errorCode || 'SUPPLIER_500';
   
-  res.status(statusCode).json({
+  const response = {
     success: false,
     message: error.message || 'An error occurred',
+    errorCode,
     timestamp: new Date().toISOString()
-  });
+  };
+  
+  // Add debug info in development
+  if (process.env.NODE_ENV === 'development' && error.debug) {
+    response.debug = error.debug;
+  }
+  
+  // Add validation errors if present
+  if (error.debug?.errors) {
+    response.errors = error.debug.errors;
+  }
+  
+  console.log(`[CONTROLLER] ${operation} - Sending response:`, { statusCode, errorCode });
+  res.status(statusCode).json(response);
 };
 
 /**
- * Get all suppliers
+ * Get all suppliers with filters
  */
 exports.getAllSuppliers = async (req, res, next) => {
-  console.log('[CONTROLLER] getAllSuppliers - Request');
   try {
-    const suppliers = await SupplierModel.findAll();
-    console.log('[CONTROLLER] getAllSuppliers - Suppliers count:', suppliers.length);
-    res.status(200).json({
-      success: true,
-      data: suppliers
-    });
+    const { search = '', isActive = '', page = 1, limit = 10 } = req.query;
+    
+    console.log('[CONTROLLER] getAllSuppliers - Request query:', req.query);
+    
+    const options = {
+      search,
+      isActive: isActive === '' ? null : isActive === 'true',
+      page: parseInt(page),
+      limit: parseInt(limit)
+    };
+
+    console.log('[CONTROLLER] getAllSuppliers - Options:', options);
+    const result = await supplierService.getAllSuppliers(options);
+
+    console.log('[CONTROLLER] getAllSuppliers - Result success:', result.success, 'Count:', result.data?.length);
+    res.status(200).json(result);
   } catch (error) {
-    handleError(error, res, 'getAllSuppliers');
+    handleServiceError(error, res, 'getAllSuppliers');
   }
 };
 
@@ -48,22 +76,12 @@ exports.getSupplierById = async (req, res, next) => {
     const { id } = req.params;
     console.log('[CONTROLLER] getSupplierById - Supplier ID:', id);
     
-    const supplier = await SupplierModel.findById(id);
-    
-    if (!supplier) {
-      return res.status(404).json({
-        success: false,
-        message: 'Supplier not found'
-      });
-    }
-    
-    console.log('[CONTROLLER] getSupplierById - Found:', supplier.id);
-    res.status(200).json({
-      success: true,
-      data: supplier
-    });
+    const result = await supplierService.getSupplierById(id);
+
+    console.log('[CONTROLLER] getSupplierById - Result success:', result.success);
+    res.status(200).json(result);
   } catch (error) {
-    handleError(error, res, 'getSupplierById');
+    handleServiceError(error, res, 'getSupplierById');
   }
 };
 
@@ -73,25 +91,17 @@ exports.getSupplierById = async (req, res, next) => {
 exports.createSupplier = async (req, res, next) => {
   try {
     const supplierData = req.body;
+    const userRole = req.user?.role;
+
     console.log('[CONTROLLER] createSupplier - Request body:', supplierData);
+    console.log('[CONTROLLER] createSupplier - User role:', userRole);
 
-    if (!supplierData.name || supplierData.name.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        message: 'Supplier name is required'
-      });
-    }
+    const result = await supplierService.createSupplier(supplierData, userRole);
 
-    const supplierId = await SupplierModel.create(supplierData);
-    console.log('[CONTROLLER] createSupplier - Created ID:', supplierId);
-
-    res.status(201).json({
-      success: true,
-      message: 'Supplier created successfully',
-      data: { id: supplierId }
-    });
+    console.log('[CONTROLLER] createSupplier - Result success:', result.success);
+    res.status(201).json(result);
   } catch (error) {
-    handleError(error, res, 'createSupplier');
+    handleServiceError(error, res, 'createSupplier');
   }
 };
 
@@ -102,32 +112,18 @@ exports.updateSupplier = async (req, res, next) => {
   try {
     const { id } = req.params;
     const supplierData = req.body;
-    console.log('[CONTROLLER] updateSupplier - Supplier ID:', id, 'Data:', supplierData);
+    const userRole = req.user?.role;
 
-    const existing = await SupplierModel.findById(id);
-    if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: 'Supplier not found'
-      });
-    }
+    console.log('[CONTROLLER] updateSupplier - Supplier ID:', id);
+    console.log('[CONTROLLER] updateSupplier - Request body:', supplierData);
+    console.log('[CONTROLLER] updateSupplier - User role:', userRole);
 
-    if (!supplierData.name || supplierData.name.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        message: 'Supplier name is required'
-      });
-    }
+    const result = await supplierService.updateSupplier(id, supplierData, userRole);
 
-    await SupplierModel.update(id, supplierData);
-    console.log('[CONTROLLER] updateSupplier - Updated ID:', id);
-
-    res.status(200).json({
-      success: true,
-      message: 'Supplier updated successfully'
-    });
+    console.log('[CONTROLLER] updateSupplier - Result success:', result.success);
+    res.status(200).json(result);
   } catch (error) {
-    handleError(error, res, 'updateSupplier');
+    handleServiceError(error, res, 'updateSupplier');
   }
 };
 
@@ -137,24 +133,53 @@ exports.updateSupplier = async (req, res, next) => {
 exports.deleteSupplier = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const userRole = req.user?.role;
+
     console.log('[CONTROLLER] deleteSupplier - Supplier ID:', id);
+    console.log('[CONTROLLER] deleteSupplier - User role:', userRole);
 
-    const existing = await SupplierModel.findById(id);
-    if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: 'Supplier not found'
-      });
-    }
+    const result = await supplierService.deleteSupplier(id, userRole);
 
-    await SupplierModel.delete(id);
-    console.log('[CONTROLLER] deleteSupplier - Deleted ID:', id);
-
-    res.status(200).json({
-      success: true,
-      message: 'Supplier deleted successfully'
-    });
+    console.log('[CONTROLLER] deleteSupplier - Result success:', result.success);
+    res.status(200).json(result);
   } catch (error) {
-    handleError(error, res, 'deleteSupplier');
+    handleServiceError(error, res, 'deleteSupplier');
+  }
+};
+
+/**
+ * Get supplier with item count
+ */
+exports.getSupplierWithItemCount = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    console.log('[CONTROLLER] getSupplierWithItemCount - Supplier ID:', id);
+    
+    const result = await supplierService.getSupplierWithItemCount(id);
+
+    console.log('[CONTROLLER] getSupplierWithItemCount - Result success:', result.success);
+    res.status(200).json(result);
+  } catch (error) {
+    handleServiceError(error, res, 'getSupplierWithItemCount');
+  }
+};
+
+/**
+ * Toggle supplier status (activate/deactivate)
+ */
+exports.toggleSupplierStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userRole = req.user?.role;
+
+    console.log('[CONTROLLER] toggleSupplierStatus - Supplier ID:', id);
+    console.log('[CONTROLLER] toggleSupplierStatus - User role:', userRole);
+
+    const result = await supplierService.toggleSupplierStatus(id, userRole);
+
+    console.log('[CONTROLLER] toggleSupplierStatus - Result success:', result.success);
+    res.status(200).json(result);
+  } catch (error) {
+    handleServiceError(error, res, 'toggleSupplierStatus');
   }
 };

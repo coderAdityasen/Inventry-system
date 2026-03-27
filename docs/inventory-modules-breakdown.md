@@ -44,29 +44,22 @@ Based on project analysis, here are the modules required for a complete working 
 - `frontend/src/pages/inventory/InventoryDetails.jsx` - Single item view
 
 ---
+## 3. Supplier Management Module
 
-## 3. Categories Module
+Context:
+Supplier management system within the inventory application that maintains and organizes all supplier-related data, enabling linkage with products, orders, and procurement workflows, while supporting role-based access (Admin, Manager, Staff) for secure and efficient operations.
 
-**Context:** Product categorization system  
-**Objective:** Manage product categories for organization and filtering  
-**Input:** Category name, description, parent category (for hierarchy)  
-**Constraints:**
-- Unique category names
-- Maximum 2-level hierarchy (parent/child)
-- Cannot delete if items exist in category
-**Output:** Category tree, category list, CRUD response
+Objective:
+Manage supplier details with full CRUD functionality, allowing Admin and Manager users to create, update, and delete suppliers, while Staff users can view supplier data; ensure data accuracy, validation, and seamless integration with inventory and purchasing modules.
 
-**Backend Files:**
-- `backend/models/Category.js`
-- `backend/controllers/categoryController.js`
-- `backend/services/categoryService.js`
-- `backend/routes/categoryRoutes.js`
+Inputs:
+Supplier Name (required), Contact (required, valid phone format), Email (required, valid format), Address (optional but recommended), and optional fields like status (active/inactive) and timestamps; inputs are collected via frontend forms with validation and sent to backend APIs.
 
-**Frontend Files:**
-- `frontend/src/pages/categories/CategoryList.jsx`
-- `frontend/src/pages/categories/CategoryForm.jsx`
+Constraints:
+Supplier name may be enforced as unique (based on business rules); email must follow valid format and can be unique; required fields (name, contact, email) must not be empty; deletion should be restricted if the supplier is linked to existing products or orders (or handled via soft delete); role-based access control must restrict Staff users from modifying data; backend must validate all inputs and handle errors properly.
 
----
+Output:
+Fully functional Supplier CRUD APIs (create, read, update, delete) with secure authentication and role-based authorization; Supplier database model/schema with validation and indexing; frontend UI including Supplier List (table with search, filter, pagination, and role-based actions) and Supplier Form (add/edit with validation and feedback); consistent API responses with success/error messages and structured supplier data for integration across the system.
 
 ## 4. Suppliers Module
 

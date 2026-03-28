@@ -20,6 +20,14 @@ function OrderForm() {
   const [formData, setFormData] = useState({
     order_type: 'purchase',
     supplier_id: '',
+    order_date: new Date().toISOString().split('T')[0],
+    expected_delivery_date: '',
+    customer_name: '',
+    shipping_address: '',
+    payment_method: 'cash',
+    tax_rate: 0,
+    tax_amount: 0,
+    discount_amount: 0,
     notes: '',
     items: []
   });
@@ -117,7 +125,20 @@ function OrderForm() {
 
   // Calculate order total
   const calculateTotal = () => {
+    const subtotal = formData.items.reduce((sum, item) => sum + (item.total_price || 0), 0);
+    const taxAmount = subtotal * (formData.tax_rate / 100);
+    const discountAmount = formData.discount_amount || 0;
+    return subtotal + taxAmount - discountAmount;
+  };
+
+  // Calculate subtotal
+  const calculateSubtotal = () => {
     return formData.items.reduce((sum, item) => sum + (item.total_price || 0), 0);
+  };
+
+  // Calculate tax amount
+  const calculateTaxAmount = () => {
+    return calculateSubtotal() * (formData.tax_rate / 100);
   };
 
   // Handle submit
@@ -252,6 +273,148 @@ function OrderForm() {
             </div>
           </div>
 
+          {/* Order Date and Expected Delivery */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label htmlFor="order_date" className="block text-sm font-medium text-gray-700 mb-1">
+                Order Date
+              </label>
+              <input
+                type="date"
+                id="order_date"
+                name="order_date"
+                value={formData.order_date}
+                onChange={handleChange}
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="expected_delivery_date" className="block text-sm font-medium text-gray-700 mb-1">
+                Expected Delivery Date
+              </label>
+              <input
+                type="date"
+                id="expected_delivery_date"
+                name="expected_delivery_date"
+                value={formData.expected_delivery_date}
+                onChange={handleChange}
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          {/* Customer Information (for Sale orders) */}
+          {formData.order_type === 'sale' && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="text-md font-medium text-gray-900 mb-4">Customer Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="customer_name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Customer Name
+                  </label>
+                  <input
+                    type="text"
+                    id="customer_name"
+                    name="customer_name"
+                    value={formData.customer_name}
+                    onChange={handleChange}
+                    className="text-black w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Enter customer name"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="payment_method" className="block text-sm font-medium text-gray-700 mb-1">
+                    Payment Method
+                  </label>
+                  <select
+                    id="payment_method"
+                    name="payment_method"
+                    value={formData.payment_method}
+                    onChange={handleChange}
+                    className="text-black w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="credit">Credit</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="shipping_address" className="block text-sm font-medium text-gray-700 mb-1">
+                    Shipping Address
+                  </label>
+                  <textarea
+                    id="shipping_address"
+                    name="shipping_address"
+                    value={formData.shipping_address}
+                    onChange={handleChange}
+                    rows={2}
+                    className="text-black w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Enter shipping address"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Method (for Purchase orders) */}
+          {formData.order_type === 'purchase' && (
+            <div className="mb-6">
+              <label htmlFor="payment_method" className="block text-sm font-medium text-gray-700 mb-1">
+                Payment Method
+              </label>
+              <select
+                id="payment_method"
+                name="payment_method"
+                value={formData.payment_method}
+                onChange={handleChange}
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="credit">Credit</option>
+              </select>
+            </div>
+          )}
+
+          {/* Tax and Discount */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label htmlFor="tax_rate" className="block text-sm font-medium text-gray-700 mb-1">
+                Tax Rate (%)
+              </label>
+              <input
+                type="number"
+                id="tax_rate"
+                name="tax_rate"
+                min="0"
+                max="100"
+                step="0.01"
+                value={formData.tax_rate}
+                onChange={handleChange}
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label htmlFor="discount_amount" className="block text-sm font-medium text-gray-700 mb-1">
+                Discount Amount ($)
+              </label>
+              <input
+                type="number"
+                id="discount_amount"
+                name="discount_amount"
+                min="0"
+                step="0.01"
+                value={formData.discount_amount}
+                onChange={handleChange}
+                className="text-black w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
           {/* Notes */}
           <div className="mb-6">
             <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
@@ -364,10 +527,24 @@ function OrderForm() {
           {/* Order Total */}
           <div className="border-t pt-4 mb-6">
             <div className="flex justify-end">
-              <div className="text-right">
-                <div className="text-sm text-gray-500">Order Total</div>
-                <div className="text-2xl font-bold text-gray-900">
-                  ${calculateTotal().toFixed(2)}
+              <div className="text-right space-y-2 w-64">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Subtotal:</span>
+                  <span className="text-gray-900">${calculateSubtotal().toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Tax ({formData.tax_rate}%):</span>
+                  <span className="text-gray-900">${calculateTaxAmount().toFixed(2)}</span>
+                </div>
+                {formData.discount_amount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Discount:</span>
+                    <span className="text-green-600">-${formData.discount_amount}</span>
+                  </div>
+                )}
+                <div className="border-t pt-2 flex justify-between">
+                  <span className="font-medium text-gray-900">Total:</span>
+                  <span className="text-2xl font-bold text-gray-900">${calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
             </div>

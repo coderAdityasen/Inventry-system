@@ -15,6 +15,15 @@ function OrderList() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    processingOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0,
+    totalRevenue: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -73,6 +82,36 @@ function OrderList() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Fetch order stats on mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        console.log('[OrderList] Fetching order stats');
+        // Get all orders for stats calculation
+        const response = await orderAPI.getAll({ page: 1, limit: 100 });
+        if (response.success) {
+          const allOrders = response.data;
+          const calculatedStats = {
+            totalOrders: allOrders.length,
+            pendingOrders: allOrders.filter(o => o.status === 'pending').length,
+            processingOrders: allOrders.filter(o => o.status === 'processing').length,
+            completedOrders: allOrders.filter(o => o.status === 'completed').length,
+            cancelledOrders: allOrders.filter(o => o.status === 'cancelled').length,
+            totalRevenue: allOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0)
+          };
+          setStats(calculatedStats);
+          console.log('[OrderList] Stats calculated:', calculatedStats);
+        }
+      } catch (err) {
+        console.error('[OrderList] Error fetching stats:', err);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Handle search with debounce
   useEffect(() => {
@@ -157,6 +196,35 @@ function OrderList() {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
+  // Get status background color for dropdown
+  const getStatusBgColor = (status) => {
+    const colors = {
+      pending: 'bg-yellow-50 text-yellow-700',
+      processing: 'bg-blue-50 text-blue-700',
+      completed: 'bg-green-50 text-green-700',
+      cancelled: 'bg-red-50 text-red-700'
+    };
+    return colors[status] || 'bg-gray-50 text-gray-700';
+  };
+
+  // Handle status change from inline dropdown
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      console.log(`[OrderList] Updating order ${orderId} status to ${newStatus}`);
+      const response = await orderAPI.updateStatus(orderId, newStatus);
+      if (response.success) {
+        console.log('[OrderList] Status updated successfully');
+        // Update local state
+        setOrders(prev => prev.map(order => 
+          order.id === orderId ? { ...order, status: newStatus } : order
+        ));
+      }
+    } catch (err) {
+      console.error('[OrderList] Error updating status:', err);
+      setError(err.response?.data?.message || 'Failed to update status');
+    }
+  };
+
   // Get order type color
   const getOrderTypeColor = (type) => {
     return type === 'purchase' 
@@ -188,6 +256,36 @@ function OrderList() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Section */}
+        {!loadingStats && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm text-gray-500">Total Orders</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.totalOrders}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm text-amber-600">Pending</div>
+              <div className="text-2xl font-bold text-amber-600">{stats.pendingOrders}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm text-blue-600">Processing</div>
+              <div className="text-2xl font-bold text-blue-600">{stats.processingOrders}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm text-emerald-600">Completed</div>
+              <div className="text-2xl font-bold text-emerald-600">{stats.completedOrders}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm text-red-600">Cancelled</div>
+              <div className="text-2xl font-bold text-red-600">{stats.cancelledOrders}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm text-gray-500">Total Revenue</div>
+              <div className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toFixed(2)}</div>
+            </div>
+          </div>
+        )}
+
         {/* Filters */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-4 flex flex-col sm:flex-row gap-4">
@@ -282,19 +380,31 @@ function OrderList() {
                   </tr>
                 ) : (
                   orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={order.id} 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => navigate(`/orders/${order.id}`)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{order.order_number}</div>
+                        <div className="text-sm font-medium text-emerald-600 hover:text-emerald-900">{order.order_number}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded ${getOrderTypeColor(order.order_type)}`}>
                           {order.order_type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </span>
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                          disabled={!isAdmin() && !isManager()}
+                          className={`px-2 py-1 text-xs font-medium rounded border-0 cursor-pointer focus:ring-2 focus:ring-emerald-500 ${getStatusBgColor(order.status)}`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="processing">Processing</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${parseFloat(order.total_amount || 0).toFixed(2)}
@@ -305,30 +415,17 @@ function OrderList() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {order.created_at ? new Date(order.created_at).toLocaleDateString() : '—'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link
-                          to={`/orders/${order.id}`}
-                          className="text-emerald-600 hover:text-emerald-900 mr-4"
-                        >
-                          View
-                        </Link>
-                        {(isAdmin() || isManager()) && order.status !== 'completed' && (
-                          <>
-                            <button
-                              onClick={() => handleStatusClick(order)}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                            >
-                              Status
-                            </button>
-                            {isAdmin() && (
-                              <button
-                                onClick={() => handleDeleteClick(order)}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                        {isAdmin() && (
+                          <button
+                            onClick={() => handleDeleteClick(order)}
+                            className="text-red-600 hover:text-red-900 ml-2"
+                            title="Delete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         )}
                       </td>
                     </tr>

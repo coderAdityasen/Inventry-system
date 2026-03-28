@@ -12,6 +12,7 @@ function InventoryDetails() {
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [updating, setUpdating] = useState(false);
 
   // Fetch item data
   useEffect(() => {
@@ -92,18 +93,58 @@ function InventoryDetails() {
 
   const stockStatus = getStockStatus();
 
+  // Handle status change
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value;
+    setUpdating(true);
+    
+    try {
+      let newQuantity = item.quantity;
+      
+      switch (newStatus) {
+        case 'out_of_stock':
+          newQuantity = 0;
+          break;
+        case 'low_stock':
+          newQuantity = item.low_stock_threshold || 5;
+          break;
+        case 'in_stock':
+          newQuantity = item.low_stock_threshold + 10 || 20;
+          break;
+        default:
+          break;
+      }
+
+      console.log('[InventoryDetails] Updating quantity to:', newQuantity);
+      const response = await inventoryAPI.update(item.id, { quantity: newQuantity });
+      
+      if (response.success) {
+        setItem(prev => ({ ...prev, quantity: newQuantity }));
+        console.log('[InventoryDetails] Quantity updated successfully');
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 'Failed to update status';
+      setError(errorMessage);
+      console.error('[InventoryDetails] Error updating status:', err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <Link
+              to="/inventory"
+              className="text-gray-600 hover:text-gray-900"
+            >
+              ← Back to Inventory
+            </Link>
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">Item Details</h1>
-          <Link
-            to="/inventory"
-            className="text-gray-600 hover:text-gray-900"
-          >
-            ← Back to Inventory
-          </Link>
         </div>
       </header>
 
@@ -115,7 +156,7 @@ function InventoryDetails() {
           {item.image_url && (
             <div className="h-64 w-full bg-gray-100">
               <img
-                src={item.image_url}
+                src={`${item.image_url}`}
                 alt={item.name}
                 className="h-full w-full object-cover"
               />
@@ -204,6 +245,34 @@ function InventoryDetails() {
                   {new Date(item.updated_at).toLocaleString()}
                 </div>
               </div>
+            </div>
+
+            {/* Stock Status Update */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+                Update Stock Status
+              </h3>
+              <div className="flex items-center gap-4">
+                <select
+                  value={stockStatus.status}
+                  onChange={handleStatusChange}
+                  className={`text-black px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    stockStatus.status === 'out_of_stock' ? 'border-red-300 bg-red-50' :
+                    stockStatus.status === 'low_stock' ? 'border-yellow-300 bg-yellow-50' :
+                    'border-green-300 bg-green-50'
+                  }`}
+                >
+                  <option value="in_stock">In Stock</option>
+                  <option value="low_stock">Low Stock</option>
+                  <option value="out_of_stock">Out of Stock</option>
+                </select>
+                {updating && (
+                  <span className="text-sm text-blue-600">Updating...</span>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                This will update the product's quantity based on the selected status
+              </p>
             </div>
           </div>
         </div>

@@ -21,6 +21,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - uploads-data:/app/uploads
     networks:
       - inventory-network
     depends_on:
@@ -47,6 +48,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - uploads-data:/app/public/uploads
     networks:
       - inventory-network
     depends_on:
@@ -84,4 +86,6 @@ networks:
 
 volumes:
   mysql-data:
+    driver: local
+  uploads-data:
     driver: local

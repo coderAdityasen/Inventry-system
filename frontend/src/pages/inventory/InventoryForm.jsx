@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import inventoryAPI from '../../services/inventoryAPI';
+import axios from 'axios';
 
 
 /**
@@ -30,6 +31,7 @@ function InventoryForm() {
   const [fetching, setFetching] = useState(isEditMode);
   const [error, setError] = useState(null);
   const [errors, setErrors] = useState({});
+  const [uploading, setUploading] = useState(false);
 
   // Category and supplier options
   const [categories, setCategories] = useState([]);
@@ -126,6 +128,10 @@ function InventoryForm() {
       newErrors.sku = 'SKU is required';
     }
 
+    if (!formData.image_url) {
+      newErrors.image_url = 'Product image is required';
+    }
+
     if (formData.quantity < 0) {
       newErrors.quantity = 'Quantity cannot be negative';
     }
@@ -140,6 +146,42 @@ function InventoryForm() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle image upload to Cloudinary
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      console.log('[InventoryForm] Uploading image to Cloudinary:', file.name);
+      
+      const imageFormdata = new FormData();
+      imageFormdata.append('file', file);
+      imageFormdata.append('upload_preset', 'adityasenhulala');
+
+      const response = await axios.post(
+        'https://api.cloudinary.com/v1_1/dj3gpszjr/image/upload', 
+        imageFormdata
+      );
+
+      console.log('[InventoryForm] Cloudinary response:', response.data);
+      
+      if (response.data.secure_url) {
+        setFormData(prev => ({
+          ...prev,
+          image_url: response.data.secure_url
+        }));
+        console.log('[InventoryForm] Image uploaded successfully to Cloudinary');
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to upload image to Cloudinary';
+      setError(errorMessage);
+      console.error('[InventoryForm] Cloudinary upload error:', err);
+    } finally {
+      setUploading(false);
+    }
   };
 
   // Handle form submit
@@ -207,15 +249,17 @@ function InventoryForm() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <Link
+              to="/inventory"
+              className="text-gray-600 hover:text-gray-900"
+            >
+              ← Back to Inventory
+            </Link>
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">
             {isEditMode ? 'Edit Item' : 'Add New Item'}
           </h1>
-          <Link
-            to="/inventory"
-            className="text-gray-600 hover:text-gray-900"
-          >
-            ← Back to Inventory
-          </Link>
         </div>
       </header>
 
@@ -405,20 +449,63 @@ function InventoryForm() {
               </p>
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div>
-              <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Product Image <span className="text-red-500">*</span>
               </label>
-              <input
-                type="url"
-                id="image_url"
-                name="image_url"
-                value={formData.image_url}
-                onChange={handleChange}
-                className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://example.com/image.jpg"
-              />
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:bg-gray-50">
+                <div className="space-y-1 text-center">
+                  {formData.image_url ? (
+                    <div className="relative">
+                      <img
+                        src={formData.image_url}
+                        alt="Product"
+                        className="mx-auto h-48 w-48 object-cover rounded-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                        className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="flex text-sm text-gray-600 justify-center">
+                        <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
+                          <span>Upload a file</span>
+                          <input
+                            id="file-upload"
+                            name="file-upload"
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            onChange={handleImageUpload}
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                    </>
+                  )}
+                </div>
+              </div>
+              {uploading && (
+                <div className="mt-2 flex items-center text-sm text-blue-600">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Uploading...
+                </div>
+              )}
             </div>
           </div>
 

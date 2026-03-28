@@ -211,11 +211,8 @@ const inventoryAPI = {
     }
   },
 
-  // =====================
-  // Category CRUD operations
-  // =====================
-  getCategoryById: async (id) => {
-    console.log('[API] getCategoryById - Request category ID:', id);
+  deleteCategory: async (id) => {
+    console.log('[API] deleteCategory - Request for category ID:', id);
     try {
       const response = await api.get(`/api/v1/categories/${id}`);
       console.log('[API] getCategoryById - Response success:', response.data.success);
@@ -282,6 +279,54 @@ const inventoryAPI = {
         data: err.response?.data,
         url: err.config?.url,
         categoryId: id
+      });
+      throw err;
+    }
+  },
+
+  // =====================
+  // Image Upload
+  // =====================
+  uploadImage: async (file) => {
+    console.log('[API] uploadImage - Uploading image:', file?.name);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('type', 'products');
+      
+      const response = await api.post('/api/v1/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      console.log('[API] uploadImage - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] uploadImage - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      throw err;
+    }
+  },
+
+  // =====================
+  // Inventory Stats
+  // =====================
+  getStats: async () => {
+    console.log('[API] getStats - Request');
+    try {
+      const response = await api.get('/api/v1/items/stats');
+      console.log('[API] getStats - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getStats - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
       });
       throw err;
     }

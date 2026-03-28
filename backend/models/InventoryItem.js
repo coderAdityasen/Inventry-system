@@ -301,6 +301,45 @@ const InventoryItemModel = {
       console.error('[MODEL] updateQuantity - Error:', error);
       throw error;
     }
+  },
+
+  /**
+   * Get inventory statistics
+   */
+  getStats: async () => {
+    try {
+      // Get total count
+      const [totalResult] = await pool.execute('SELECT COUNT(*) as count FROM inventory_items');
+      const totalItems = totalResult[0].count;
+
+      // Get out of stock count (quantity = 0)
+      const [outOfStockResult] = await pool.execute(
+        'SELECT COUNT(*) as count FROM inventory_items WHERE quantity = 0'
+      );
+      const outOfStockItems = outOfStockResult[0].count;
+
+      // Get low stock count (quantity > 0 but <= low_stock_threshold)
+      const [lowStockResult] = await pool.execute(
+        'SELECT COUNT(*) as count FROM inventory_items WHERE quantity > 0 AND quantity <= low_stock_threshold'
+      );
+      const lowStockProducts = lowStockResult[0].count;
+
+      // Get low stock items count (total items below threshold including out of stock)
+      const [lowStockItemsResult] = await pool.execute(
+        'SELECT SUM(CASE WHEN quantity <= low_stock_threshold THEN 1 ELSE 0 END) as count FROM inventory_items'
+      );
+      const lowStockItems = lowStockItemsResult[0].count || 0;
+
+      return {
+        totalProducts: totalItems,
+        outOfStockProducts: outOfStockItems,
+        lowStockProducts: lowStockProducts,
+        lowStockItems: lowStockItems
+      };
+    } catch (error) {
+      console.error('Error in getStats:', error);
+      throw error;
+    }
   }
 };
 

@@ -509,3 +509,31 @@ exports.searchItems = async (searchTerm) => {
     );
   }
 };
+
+/**
+ * Get inventory statistics (total, low stock, out of stock)
+ */
+exports.getStats = async () => {
+  console.log('[SERVICE] getStats - Getting inventory stats');
+  try {
+    const stats = await InventoryItemModel.getStats();
+    
+    console.log('[SERVICE] getStats - Stats:', stats);
+    return {
+      success: true,
+      data: stats
+    };
+  } catch (error) {
+    if (error.errorCode) {
+      console.error('[SERVICE] getStats - Known error:', error.errorCode, error.message);
+      throw error;
+    }
+    console.error('[SERVICE] getStats - Error:', error);
+    throw createError(
+      'Failed to get inventory stats',
+      'ITEM_500',
+      500,
+      { service: 'getStats', originalError: error.message }
+    );
+  }
+};

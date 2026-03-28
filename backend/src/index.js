@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +22,9 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -48,6 +52,9 @@ app.use('/api/v1/orders', require('../routes/orderRoutes'));
 
 // Report routes
 app.use('/api/v1/reports', require('../routes/reportRoutes'));
+
+// Upload routes
+app.use('/api/v1/upload', require('../routes/uploadRoutes'));
 
 // 404 handler
 app.use((req, res) => {

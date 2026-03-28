@@ -1,6 +1,7 @@
 import useAuth from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import inventoryAPI from '../services/inventoryAPI';
 
 /**
  * Dashboard Page - Protected landing page after login

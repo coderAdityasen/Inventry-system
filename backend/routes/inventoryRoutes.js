@@ -29,6 +29,13 @@ router.get('/', inventoryController.getAllItems);
 router.get('/low-stock', inventoryController.getLowStock);
 
 /**
+ * @route   GET /api/v1/items/stats
+ * @desc    Get inventory statistics
+ * @access  Protected
+ */
+router.get('/stats', inventoryController.getStats);
+
+/**
  * @route   GET /api/v1/items/search
  * @desc    Search items
  * @access  Protected

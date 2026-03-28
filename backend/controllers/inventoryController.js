@@ -192,3 +192,19 @@ exports.searchItems = async (req, res, next) => {
     handleServiceError(error, res, 'searchItems');
   }
 };
+
+/**
+ * Get inventory stats (total, low stock, out of stock)
+ */
+exports.getStats = async (req, res, next) => {
+  try {
+    console.log('[CONTROLLER] getStats - Request');
+    
+    const result = await inventoryService.getStats();
+
+    console.log('[CONTROLLER] getStats - Result success:', result.success);
+    res.status(200).json(result);
+  } catch (error) {
+    handleServiceError(error, res, 'getStats');
+  }
+};

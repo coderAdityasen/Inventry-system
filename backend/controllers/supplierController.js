@@ -69,6 +69,20 @@ exports.getAllSuppliers = async (req, res, next) => {
 };
 
 /**
+ * Get supplier stats
+ */
+exports.getSupplierStats = async (req, res, next) => {
+  try {
+    console.log('[CONTROLLER] getSupplierStats - Request');
+    const result = await supplierService.getSupplierStats();
+    console.log('[CONTROLLER] getSupplierStats - Result success:', result.success);
+    res.status(200).json(result);
+  } catch (error) {
+    handleServiceError(error, res, 'getSupplierStats');
+  }
+};
+
+/**
  * Get supplier by ID
  */
 exports.getSupplierById = async (req, res, next) => {
@@ -150,17 +164,17 @@ exports.deleteSupplier = async (req, res, next) => {
 /**
  * Get supplier with item count
  */
-exports.getSupplierWithItemCount = async (req, res, next) => {
+exports.getSupplierWithPurchaseStats = async (req, res, next) => {
   try {
     const { id } = req.params;
-    console.log('[CONTROLLER] getSupplierWithItemCount - Supplier ID:', id);
+    console.log('[CONTROLLER] getSupplierWithPurchaseStats - Supplier ID:', id);
     
-    const result = await supplierService.getSupplierWithItemCount(id);
+    const result = await supplierService.getSupplierWithPurchaseStats(id);
 
-    console.log('[CONTROLLER] getSupplierWithItemCount - Result success:', result.success);
+    console.log('[CONTROLLER] getSupplierWithPurchaseStats - Result success:', result.success);
     res.status(200).json(result);
   } catch (error) {
-    handleServiceError(error, res, 'getSupplierWithItemCount');
+    handleServiceError(error, res, 'getSupplierWithPurchaseStats');
   }
 };
 

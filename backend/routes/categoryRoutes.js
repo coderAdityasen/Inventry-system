@@ -20,6 +20,13 @@ router.use(verifyToken);
 router.get('/', categoryController.getAllCategories);
 
 /**
+ * @route   GET /api/v1/categories/stats
+ * @desc    Get category statistics
+ * @access  Protected
+ */
+router.get('/stats', categoryController.getCategoryStats);
+
+/**
  * @route   GET /api/v1/categories/:id
  * @desc    Get category by ID
  * @access  Protected

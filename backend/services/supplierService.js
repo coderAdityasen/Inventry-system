@@ -488,3 +488,70 @@ exports.toggleSupplierStatus = async (id, userRole) => {
     );
   }
 };
+
+/**
+ * Get supplier statistics for dashboard
+ */
+exports.getSupplierStats = async () => {
+  console.log('[SERVICE] getSupplierStats - Getting supplier statistics');
+  try {
+    const stats = await SupplierModel.getStats();
+    console.log('[SERVICE] getSupplierStats - Stats:', stats);
+    return {
+      success: true,
+      data: stats
+    };
+  } catch (error) {
+    console.error('[SERVICE] getSupplierStats - Error:', error);
+    throw createError(
+      'Failed to get supplier statistics',
+      'SUPPLIER_500',
+      500,
+      { service: 'getSupplierStats', originalError: error.message }
+    );
+  }
+};
+
+/**
+ * Get supplier with purchase stats
+ */
+exports.getSupplierWithPurchaseStats = async (id) => {
+  console.log('[SERVICE] getSupplierWithPurchaseStats - Supplier ID:', id);
+  try {
+    if (!id || isNaN(parseInt(id))) {
+      throw createError(
+        'Invalid supplier ID',
+        'SUPPLIER_001',
+        400,
+        { providedId: id }
+      );
+    }
+
+    const supplier = await SupplierModel.findWithPurchaseStats(id);
+    if (!supplier) {
+      throw createError(
+        `Supplier not found with ID: ${id}`,
+        'SUPPLIER_004',
+        404,
+        { requestedId: id }
+      );
+    }
+
+    console.log('[SERVICE] getSupplierWithPurchaseStats - Found supplier:', supplier.name);
+    return {
+      success: true,
+      data: supplier
+    };
+  } catch (error) {
+    if (error.errorCode) {
+      throw error;
+    }
+    console.error('[SERVICE] getSupplierWithPurchaseStats - Error:', error);
+    throw createError(
+      'Failed to get supplier details',
+      'SUPPLIER_500',
+      500,
+      { service: 'getSupplierWithPurchaseStats', supplierId: id, originalError: error.message }
+    );
+  }
+};

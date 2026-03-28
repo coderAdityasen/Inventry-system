@@ -41,6 +41,23 @@ exports.getAllCategories = async (req, res, next) => {
 };
 
 /**
+ * Get category statistics
+ */
+exports.getCategoryStats = async (req, res, next) => {
+  console.log('[CONTROLLER] getCategoryStats - Request');
+  try {
+    const stats = await CategoryModel.getStats();
+    console.log('[CONTROLLER] getCategoryStats - Stats:', stats);
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    handleError(error, res, 'getCategoryStats');
+  }
+};
+
+/**
  * Get category by ID
  */
 exports.getCategoryById = async (req, res, next) => {

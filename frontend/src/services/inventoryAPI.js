@@ -191,6 +191,23 @@ const inventoryAPI = {
     }
   },
 
+  getCategoryStats: async () => {
+    console.log('[API] getCategoryStats - Request');
+    try {
+      const response = await api.get('/api/v1/categories/stats');
+      console.log('[API] getCategoryStats - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getCategoryStats - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      throw err;
+    }
+  },
+
   // =====================
   // Supplier API methods
   // =====================

@@ -15,6 +15,8 @@ function InventoryList() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -22,14 +24,35 @@ function InventoryList() {
     itemsPerPage: 10
   });
   
-  // Stats state - updated to match requirements
-  const [stats, setStats] = useState({ 
-    totalProducts: 0, 
-    lowStockProducts: 0, 
-    lowStockItems: 0,
-    outOfStockProducts: 0 
-  });
-  const [loadingStats, setLoadingStats] = useState(true);
+  // Category and supplier filter options
+  const [categories, setCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loadingFilters, setLoadingFilters] = useState(true);
+
+  // Fetch category and supplier options
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const [categoriesRes, suppliersRes] = await Promise.all([
+          inventoryAPI.getAllCategories(),
+          inventoryAPI.getAllSuppliers()
+        ]);
+        
+        if (categoriesRes.success) {
+          setCategories(categoriesRes.data.categories || categoriesRes.data || []);
+        }
+        if (suppliersRes.success) {
+          setSuppliers(suppliersRes.data.suppliers || suppliersRes.data || []);
+        }
+      } catch (err) {
+        console.error('[InventoryList] Error fetching filter options:', err);
+      } finally {
+        setLoadingFilters(false);
+      }
+    };
+    
+    fetchFilters();
+  }, []);
   
   // Filter state
   const [filters, setFilters] = useState({
@@ -164,17 +187,21 @@ function InventoryList() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Link
-              to="/dashboard"
-              className="text-gray-600 hover:text-gray-900"
-            >
-              ← Back to Dashboard
-            </Link>
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Link
+                to="/dashboard"
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+              <h1 className="ml-4 text-2xl font-bold text-gray-900">Inventory Management</h1>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
         </div>
       </header>
 
@@ -183,7 +210,7 @@ function InventoryList() {
         {/* Stats Section */}
         {!loadingStats && (
           <div className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Total Products */}
               <div className="bg-white overflow-hidden shadow rounded-lg">
                 <div className="px-4 py-4 sm:p-5">
@@ -214,8 +241,8 @@ function InventoryList() {
                     </div>
                     <div className="ml-4 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Low Stock</dt>
-                        <dd className="text-2xl font-semibold text-gray-900">{stats.lowStockProducts}</dd>
+                        <dt className="text-sm font-medium text-gray-500 truncate">Low Stock Items</dt>
+                        <dd className="text-2xl font-semibold text-gray-900">{stats.lowStockItems}</dd>
                       </dl>
                     </div>
                   </div>
@@ -240,41 +267,25 @@ function InventoryList() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-            <span className="block sm:inline">{error}</span>
-            <button
-              onClick={() => setError(null)}
-              className="absolute top-0 bottom-0 right-0 px-4 py-3"
-            >
-              <span className="sr-only">Dismiss</span>
-              ×
-            </button>
-          </div>
-        )}
 
-        {/* Stats Section */}
-        {!loadingStats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm text-gray-500">Total Products</div>
-              <div className="text-2xl font-bold text-gray-900">{stats.totalProducts}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm text-amber-600">Low Stock Items</div>
-              <div className="text-2xl font-bold text-amber-600">{stats.lowStockItems}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm text-red-600">Out of Stock</div>
-              <div className="text-2xl font-bold text-red-600">{stats.outOfStockProducts}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm text-emerald-600">Low Stock Products</div>
-              <div className="text-2xl font-bold text-emerald-600">{stats.lowStockProducts}</div>
+              {/* Low Stock Products */}
+              <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="px-4 py-4 sm:p-5">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 bg-emerald-500 rounded-md p-2.5">
+                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">Low Stock Products</dt>
+                        <dd className="text-2xl font-semibold text-gray-900">{stats.lowStockProducts}</dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -334,8 +345,12 @@ function InventoryList() {
               onChange={(e) => handleFilterChange('category', e.target.value)}
               className="text-black px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Categories</option>
-              {/* Categories will be loaded from API */}
+              <option value="">{loadingFilters ? 'Loading...' : 'All Categories'}</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
             </select>
             
             <select
@@ -343,8 +358,12 @@ function InventoryList() {
               onChange={(e) => handleFilterChange('supplier', e.target.value)}
               className="text-black px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Suppliers</option>
-              {/* Suppliers will be loaded from API */}
+              <option value="">{loadingFilters ? 'Loading...' : 'All Suppliers'}</option>
+              {suppliers.map(supplier => (
+                <option key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </option>
+              ))}
             </select>
 
             <select

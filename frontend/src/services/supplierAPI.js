@@ -8,6 +8,26 @@ import api from './api';
 
 const supplierAPI = {
   /**
+   * Get supplier statistics
+   */
+  getStats: async () => {
+    console.log('[API] supplier.getStats - Request');
+    try {
+      const response = await api.get('/api/v1/suppliers/stats');
+      console.log('[API] supplier.getStats - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] supplier.getStats - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      throw err;
+    }
+  },
+
+  /**
    * Get all suppliers with optional filters
    * @param {Object} params - Query parameters
    * @param {string} params.search - Search term
@@ -66,6 +86,28 @@ const supplierAPI = {
       return response.data;
     } catch (err) {
       console.error('[API] supplier.getWithItemCount - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url,
+        supplierId: id
+      });
+      throw err;
+    }
+  },
+
+  /**
+   * Get supplier with purchase stats
+   * @param {number} id - Supplier ID
+   */
+  getWithPurchaseStats: async (id) => {
+    console.log('[API] supplier.getWithPurchaseStats - Request for supplier ID:', id);
+    try {
+      const response = await api.get(`/api/v1/suppliers/${id}/details`);
+      console.log('[API] supplier.getWithPurchaseStats - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] supplier.getWithPurchaseStats - Error:', {
         message: err.message,
         status: err.response?.status,
         data: err.response?.data,

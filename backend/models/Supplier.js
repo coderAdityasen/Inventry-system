@@ -173,6 +173,78 @@ const SupplierModel = {
       console.error('Error in count suppliers:', error);
       throw error;
     }
+  },
+
+  /**
+   * Get supplier statistics for dashboard
+   */
+  getStats: async () => {
+    try {
+      // Get total, active, and inactive counts
+      const [counts] = await pool.execute(`
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+          SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive
+        FROM suppliers
+      `);
+      
+      // Get total purchase value from purchase orders
+      const [purchaseData] = await pool.execute(`
+        SELECT COALESCE(SUM(total_amount), 0) as totalPurchaseValue
+        FROM orders 
+        WHERE order_type = 'purchase' AND status != 'cancelled'
+      `);
+      
+      return {
+        total: counts[0].total || 0,
+        active: counts[0].active || 0,
+        inactive: counts[0].inactive || 0,
+        totalPurchaseValue: parseFloat(purchaseData[0].totalPurchaseValue) || 0
+      };
+    } catch (error) {
+      console.error('[MODEL] getStats - Error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get supplier with purchase stats
+   */
+  findWithPurchaseStats: async (id) => {
+    try {
+      // Get supplier basic info
+      const [supplier] = await pool.execute('SELECT * FROM suppliers WHERE id = ?', [id]);
+      if (!supplier[0]) return null;
+      
+      // Get purchase order stats for this supplier
+      const [orderStats] = await pool.execute(`
+        SELECT 
+          COUNT(*) as totalOrders,
+          COALESCE(SUM(total_amount), 0) as totalAmount,
+          SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completedOrders,
+          SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pendingOrders,
+          SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processingOrders,
+          SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelledOrders
+        FROM orders 
+        WHERE supplier_id = ? AND order_type = 'purchase'
+      `, [id]);
+      
+      // Get linked items count
+      const [itemsCount] = await pool.execute(
+        'SELECT COUNT(*) as itemCount FROM inventory_items WHERE supplier_id = ?',
+        [id]
+      );
+      
+      return {
+        ...supplier[0],
+        orderStats: orderStats[0],
+        itemCount: itemsCount[0].itemCount
+      };
+    } catch (error) {
+      console.error('[MODEL] findWithPurchaseStats - Error:', error);
+      throw error;
+    }
   }
 };
 

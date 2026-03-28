@@ -16,6 +16,13 @@ router.use(verifyToken);
 console.log('[ROUTES] Supplier routes loaded');
 
 /**
+ * @route   GET /api/v1/suppliers/stats
+ * @desc    Get supplier statistics
+ * @access  Protected
+ */
+router.get('/stats', supplierController.getSupplierStats);
+
+/**
  * @route   GET /api/v1/suppliers
  * @desc    Get all suppliers with optional filters
  * @access  Protected
@@ -37,7 +44,7 @@ router.get('/:id', supplierController.getSupplierById);
  * @access  Protected
  * @params  id
  */
-router.get('/:id/details', supplierController.getSupplierWithItemCount);
+router.get('/:id/details', supplierController.getSupplierWithPurchaseStats);
 
 /**
  * @route   POST /api/v1/suppliers

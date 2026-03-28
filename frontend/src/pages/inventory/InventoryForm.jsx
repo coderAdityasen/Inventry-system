@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import inventoryAPI from '../../services/inventoryAPI';
-import axios from 'axios';
 
 
 /**
@@ -148,37 +147,30 @@ function InventoryForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle image upload to Cloudinary
+  // Handle image upload to backend server
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     try {
-      console.log('[InventoryForm] Uploading image to Cloudinary:', file.name);
+      console.log('[InventoryForm] Uploading image to backend:', file.name);
       
-      const imageFormdata = new FormData();
-      imageFormdata.append('file', file);
-      imageFormdata.append('upload_preset', 'adityasenhulala');
-
-      const response = await axios.post(
-        'https://api.cloudinary.com/v1_1/dj3gpszjr/image/upload', 
-        imageFormdata
-      );
-
-      console.log('[InventoryForm] Cloudinary response:', response.data);
+      const response = await inventoryAPI.uploadImage(file);
       
-      if (response.data.secure_url) {
+      console.log('[InventoryForm] Backend upload response:', response);
+      
+      if (response.success && response.data?.url) {
         setFormData(prev => ({
           ...prev,
-          image_url: response.data.secure_url
+          image_url: response.data.url
         }));
-        console.log('[InventoryForm] Image uploaded successfully to Cloudinary');
+        console.log('[InventoryForm] Image uploaded successfully to backend:', response.data.url);
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to upload image to Cloudinary';
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to upload image';
       setError(errorMessage);
-      console.error('[InventoryForm] Cloudinary upload error:', err);
+      console.error('[InventoryForm] Backend upload error:', err);
     } finally {
       setUploading(false);
     }
@@ -247,19 +239,23 @@ function InventoryForm() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Link
-              to="/inventory"
-              className="text-gray-600 hover:text-gray-900"
-            >
-              ← Back to Inventory
-            </Link>
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Link
+                to="/inventory"
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+              <h1 className="ml-4 text-2xl font-bold text-gray-900">
+                {isEditMode ? 'Edit Item' : 'Add New Item'}
+              </h1>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {isEditMode ? 'Edit Item' : 'Add New Item'}
-          </h1>
         </div>
       </header>
 

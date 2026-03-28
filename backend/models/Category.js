@@ -8,13 +8,16 @@ const CategoryModel = {
   tableName: 'categories',
 
   /**
-   * Find all categories
+   * Find all categories with item counts
    */
   findAll: async () => {
     try {
       console.log('[MODEL] findAll - Fetching all categories');
       const [rows] = await pool.execute(
-        `SELECT * FROM categories ORDER BY name ASC`
+        `SELECT c.*, 
+          (SELECT COUNT(*) FROM inventory_items WHERE category_id = c.id) as item_count
+         FROM categories c 
+         ORDER BY c.name ASC`
       );
       console.log('[MODEL] findAll - Categories found:', rows.length);
       return rows;
@@ -45,12 +48,12 @@ const CategoryModel = {
    */
   create: async (categoryData) => {
     try {
-      const { name, description } = categoryData;
+      const { name, description, parent_id, display_order, meta_title, meta_description } = categoryData;
       console.log('[MODEL] create - Category data:', categoryData);
       
       const [result] = await pool.execute(
-        `INSERT INTO categories (name, description) VALUES (?, ?)`,
-        [name, description || null]
+        `INSERT INTO categories (name, description, parent_id, display_order, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?)`,
+        [name, description || null, parent_id || null, display_order || 0, meta_title || null, meta_description || null]
       );
       console.log('[MODEL] create - Insert ID:', result.insertId);
       return result.insertId;
@@ -65,12 +68,34 @@ const CategoryModel = {
    */
   update: async (id, categoryData) => {
     try {
-      const { name, description } = categoryData;
+      const { name, description, is_active, parent_id, display_order, meta_title, meta_description } = categoryData;
       console.log('[MODEL] update - Category ID:', id, 'Data:', categoryData);
       
+      // Get current category to preserve is_active if not provided
+      const [current] = await pool.execute('SELECT is_active FROM categories WHERE id = ?', [id]);
+      const currentIsActive = current[0]?.is_active;
+      
       await pool.execute(
-        `UPDATE categories SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-        [name, description, id]
+        `UPDATE categories SET 
+          name = ?, 
+          description = ?, 
+          is_active = ?,
+          parent_id = ?,
+          display_order = ?,
+          meta_title = ?,
+          meta_description = ?,
+          updated_at = CURRENT_TIMESTAMP 
+        WHERE id = ?`,
+        [
+          name, 
+          description, 
+          is_active !== undefined ? is_active : currentIsActive,
+          parent_id || null,
+          display_order || 0,
+          meta_title || null,
+          meta_description || null,
+          id
+        ]
       );
       console.log('[MODEL] update - Updated successfully');
       return true;
@@ -91,6 +116,66 @@ const CategoryModel = {
       return result.affectedRows > 0;
     } catch (error) {
       console.error('[MODEL] delete - Error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get category statistics
+   */
+  getStats: async () => {
+    try {
+      console.log('[MODEL] getStats - Getting category stats');
+      
+      // Get total categories
+      const [totalResult] = await pool.execute('SELECT COUNT(*) as total FROM categories');
+      const totalCategories = totalResult[0].total;
+      
+      // Get total items in categories
+      const [itemsResult] = await pool.execute(
+        `SELECT COUNT(*) as total FROM inventory_items WHERE category_id IS NOT NULL`
+      );
+      const totalProductsCategorized = itemsResult[0].total;
+      
+      // Get empty categories (no items)
+      const [emptyResult] = await pool.execute(
+        `SELECT COUNT(*) as total FROM categories c 
+         WHERE NOT EXISTS (SELECT 1 FROM inventory_items WHERE category_id = c.id)`
+      );
+      const emptyCategories = emptyResult[0].total;
+      
+      // Get most used category
+      const [mostUsedResult] = await pool.execute(
+        `SELECT c.id, c.name, COUNT(i.id) as item_count 
+         FROM categories c 
+         LEFT JOIN inventory_items i ON c.id = i.category_id 
+         GROUP BY c.id 
+         ORDER BY item_count DESC 
+         LIMIT 1`
+      );
+      
+      // Get total items in inventory
+      const [allItemsResult] = await pool.execute('SELECT COUNT(*) as total FROM inventory_items');
+      const totalItems = allItemsResult[0].total;
+      
+      console.log('[MODEL] getStats - Stats:', {
+        totalCategories,
+        totalProductsCategorized,
+        emptyCategories,
+        mostUsed: mostUsedResult[0]
+      });
+      
+      return {
+        totalCategories,
+        totalProductsCategorized,
+        emptyCategories,
+        mostUsedCategory: mostUsedResult[0]?.name || null,
+        mostUsedCategoryId: mostUsedResult[0]?.id || null,
+        mostUsedCategoryCount: mostUsedResult[0]?.item_count || 0,
+        totalItemsInInventory: totalItems
+      };
+    } catch (error) {
+      console.error('[MODEL] getStats - Error:', error);
       throw error;
     }
   }

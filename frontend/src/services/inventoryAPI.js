@@ -148,6 +148,75 @@ const inventoryAPI = {
     }
   },
 
+  // =====================
+  // Dashboard Stats API methods
+  // =====================
+  
+  /**
+   * Get dashboard statistics
+   */
+  getStats: async () => {
+    console.log('[API] getStats - Request for dashboard stats');
+    try {
+      const response = await api.get('/api/v1/items/stats');
+      console.log('[API] getStats - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getStats - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      // Return default structure if endpoint not available
+      return { success: true, data: { totalProducts: 0, lowStockProducts: 0, lowStockItems: 0, outOfStockProducts: 0 } };
+    }
+  },
+
+  /**
+   * Get supplier statistics for dashboard
+   */
+  getSupplierStats: async () => {
+    console.log('[API] getSupplierStats - Request for supplier stats');
+    try {
+      const response = await api.get('/api/v1/suppliers/stats');
+      console.log('[API] getSupplierStats - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getSupplierStats - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      // Return default structure if endpoint not available
+      return { success: true, data: { active: 0, totalPurchaseValue: 0, topSuppliers: [] } };
+    }
+  },
+
+  /**
+   * Get sales chart data for dashboard
+   * @param {number} days - Number of days for chart data
+   */
+  getSalesChartData: async (days = 30) => {
+    console.log('[API] getSalesChartData - Request for', days, 'days');
+    try {
+      const response = await api.get('/api/v1/reports/sales-chart', { 
+        params: { days } 
+      });
+      console.log('[API] getSalesChartData - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getSalesChartData - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      throw err;
+    }
+  },
+
   /**
    * Search items
    * @param {string} query - Search query
@@ -340,6 +409,92 @@ const inventoryAPI = {
       return response.data;
     } catch (err) {
       console.error('[API] getStats - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      throw err;
+    }
+  },
+
+  // =====================
+  // Supplier Stats
+  // =====================
+  getSupplierStats: async () => {
+    console.log('[API] getSupplierStats - Request');
+    try {
+      const response = await api.get('/api/v1/suppliers/stats');
+      console.log('[API] getSupplierStats - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getSupplierStats - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      throw err;
+    }
+  },
+
+  // =====================
+  // Get Top Selling Products (from orders)
+  // =====================
+  getTopSellingProducts: async (limit = 5) => {
+    console.log('[API] getTopSellingProducts - Request');
+    try {
+      const response = await api.get('/api/v1/reports/top-products', { 
+        params: { limit } 
+      });
+      console.log('[API] getTopSellingProducts - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getTopSellingProducts - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      throw err;
+    }
+  },
+
+  // =====================
+  // Get Recent Activity
+  // =====================
+  getRecentActivity: async (limit = 10) => {
+    console.log('[API] getRecentActivity - Request');
+    try {
+      const response = await api.get('/api/v1/orders', { 
+        params: { limit, sortBy: 'created_at', sortOrder: 'desc' } 
+      });
+      console.log('[API] getRecentActivity - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getRecentActivity - Error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      throw err;
+    }
+  },
+
+  // =====================
+  // Get Sales Chart Data
+  // =====================
+  getSalesChartData: async (days = 30) => {
+    console.log('[API] getSalesChartData - Request, days:', days);
+    try {
+      const response = await api.get('/api/v1/reports/sales-chart', { 
+        params: { days } 
+      });
+      console.log('[API] getSalesChartData - Response success:', response.data.success);
+      return response.data;
+    } catch (err) {
+      console.error('[API] getSalesChartData - Error:', {
         message: err.message,
         status: err.response?.status,
         data: err.response?.data,
